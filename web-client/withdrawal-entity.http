@@ -1,0 +1,19 @@
+@urlPrefix = http://localhost:9000
+@accountId = account-1
+@withdrawalId = withdrawal-1
+@amount = 123.45
+
+### Create a withdrawal
+
+PUT {{urlPrefix}}/withdrawal/{{withdrawalId}}/withdraw
+Content-Type: application/json
+
+{
+    "accountId": "{{accountId}}",
+    "withdrawalId": "{{withdrawalId}}",
+    "amount": {{amount}}
+}
+
+### Get the withdrawal
+
+GET {{urlPrefix}}/withdrawal/{{withdrawalId}}

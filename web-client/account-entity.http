@@ -1,0 +1,45 @@
+@urlPrefix = http://localhost:9000
+@accountId-1 = account-1
+@accountId-2 = account-1
+@fullName = John Doe
+@address = 123 Main St
+
+### create a new account 1
+
+PUT {{urlPrefix}}/account/{{accountId-1}}/create
+Content-Type: application/json
+
+{
+  "accountId": "{{accountId-1}}",
+  "fullName": "{{fullName}}",
+  "address": "{{address}}"
+}
+
+### create a new account 2
+
+PUT {{urlPrefix}}/account/{{accountId-2}}/create
+Content-Type: application/json
+
+{
+  "accountId": "{{accountId-2}}",
+  "fullName": "{{fullName}}",
+  "address": "{{address}}"
+}
+
+### update balance for account 1
+
+PUT {{urlPrefix}}/account/{{accountId-1}}/updateBalance
+Content-Type: application/json
+
+{
+  "accountId": "{{accountId}-1}",
+  "amount": 123.45
+}
+
+### get account 1
+
+GET {{urlPrefix}}/account/{{accountId-1}}
+
+### get account 2
+
+GET {{urlPrefix}}/account/{{accountId-2}}
