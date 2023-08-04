@@ -22,7 +22,7 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 @Id("leafId")
 @TypeId("withdrawalReductionLeaf")
-@RequestMapping("/withdrawal/{leafId}")
+@RequestMapping("/withdrawalReductionLeaf/{leafId}")
 public class WithdrawalReductionLeafEntity extends EventSourcedEntity<WithdrawalReductionLeafEntity.State, WithdrawalReductionLeafEntity.Event> {
   private static final Logger log = LoggerFactory.getLogger(WithdrawalReductionLeafEntity.class);
   private final String entityId;
@@ -54,7 +54,7 @@ public class WithdrawalReductionLeafEntity extends EventSourcedEntity<Withdrawal
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return effects()
-        .emitEvents(currentState().evenstFor(command))
+        .emitEvents(currentState().eventsFor(command))
         .thenReply(__ -> "OK");
   }
 
@@ -137,9 +137,9 @@ public class WithdrawalReductionLeafEntity extends EventSourcedEntity<Withdrawal
       return new DepositSeekEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.amount());
     }
 
-    List<Event> evenstFor(DepositFoundCommand command) {
-      var foundEvent = new DepositFoundEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.depositUnit());
-      var newState = on(foundEvent);
+    List<Event> eventsFor(DepositFoundCommand command) {
+      var newState = on(new DepositFoundEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.depositUnit(), BigDecimal.ZERO, List.of()));
+      var foundEvent = new DepositFoundEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.depositUnit(), amountToWithdraw, depositUnits);
       if (newState.amountWithdrawn().compareTo(newState.amountToWithdraw()) >= 0) {
         var FullyFundedEvent = new FullyFundedEvent(command.accountId(), command.withdrawalId(), command.leafId(), newState.amountWithdrawn());
         return List.of(foundEvent, FullyFundedEvent);
@@ -165,7 +165,7 @@ public class WithdrawalReductionLeafEntity extends EventSourcedEntity<Withdrawal
 
     State on(DepositFoundEvent event) {
       var filteredDepositUnits = depositUnits.stream()
-          .filter(depositUnit -> !depositUnit.depositId().equals(event.depositUnit().depositId()))
+          .filter(depositUnit -> !depositUnit.depositUnitId().equals(event.depositUnit().depositUnitId()))
           .toList();
       var newDepositUnits = Stream.concat(filteredDepositUnits.stream(), Stream.of(event.depositUnit())).toList();
       var newAmountWithdrawn = newDepositUnits.stream()
@@ -198,7 +198,7 @@ public class WithdrawalReductionLeafEntity extends EventSourcedEntity<Withdrawal
 
   public record DepositFoundCommand(String accountId, String withdrawalId, String leafId, DepositUnit depositUnit) {}
 
-  public record DepositFoundEvent(String accountId, String withdrawalId, String leafId, DepositUnit depositUnit) implements Event {}
+  public record DepositFoundEvent(String accountId, String withdrawalId, String leafId, DepositUnit depositUnit, BigDecimal amountToWithdraw, List<DepositUnit> depositUnits) implements Event {}
 
   public record FullyFundedEvent(String accountId, String withdrawalId, String leafId, BigDecimal amount) implements Event {}
 

@@ -9,10 +9,12 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import io.example.Validator;
 import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
@@ -67,6 +69,14 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
         .thenReply(__ -> "OK");
   }
 
+  @GetMapping
+  public Effect<State> get() {
+    return Validator.<Effect<State>>start()
+        .isTrue(currentState().isEmpty(), "Deposit unit not found")
+        .onError(errorMessage -> effects().error(errorMessage))
+        .onSuccess(() -> effects().reply(currentState()));
+  }
+
   @EventHandler
   public State on(ModifiedAmountEvent event) {
     log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
@@ -96,6 +106,10 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
 
     static State emptyState() {
       return new State(null, null, null, null, null, null, List.of());
+    }
+
+    boolean isEmpty() {
+      return depositId == null;
     }
 
     boolean isDuplicateCommand(ModifyAmountCommand command) {

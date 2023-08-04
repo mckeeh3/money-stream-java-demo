@@ -48,7 +48,7 @@ public class WithdrawalReductionLeafToDepositUnitAction extends Action {
   }
 
   private CompletionStage<String> callFor(DepositSeekEvent event, DepositUnitsAvailableView.DepositUnitRow row) {
-    var command = new DepositUnitEntity.WithdrawCommand(row.accountId(), row.depositId(), row.unitId(), event.amountNeeded());
+    var command = new DepositUnitEntity.WithdrawCommand(event.accountId(), event.withdrawalId(), event.leafId(), event.amountNeeded());
     return componentClient.forEventSourcedEntity(row.unitId())
         .call(DepositUnitEntity::withdraw)
         .params(command)

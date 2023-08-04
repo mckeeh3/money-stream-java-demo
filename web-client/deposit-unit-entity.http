@@ -1,0 +1,6 @@
+@urlPrefix = http://localhost:9000
+@unitId = 482e2e20-f1d8-4799-8ffe-4302596d5a05
+
+### get deposit unit
+
+GET {{urlPrefix}}/depositUnit/{{unitId}}

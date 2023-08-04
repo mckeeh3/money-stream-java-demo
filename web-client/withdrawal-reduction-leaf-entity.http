@@ -1,0 +1,7 @@
+@urlPrefix = http://localhost:9000
+@leafId = a1f32e6d-b291-4786-9c81-da19a15f4249
+
+#### get leaf
+
+GET {{urlPrefix}}/withdrawalReductionLeaf/{{leafId}}
+

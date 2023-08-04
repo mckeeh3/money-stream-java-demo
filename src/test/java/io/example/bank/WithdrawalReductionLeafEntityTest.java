@@ -181,6 +181,7 @@ public class WithdrawalReductionLeafEntityTest {
     var result = testKit.call(e -> e.depositFound(command));
     assertTrue(result.isReply());
     assertEquals("OK", result.getReply());
+
     {
       var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
       assertEquals("accountId", event.accountId());
@@ -188,6 +189,7 @@ public class WithdrawalReductionLeafEntityTest {
       assertEquals("leafId", event.leafId());
       assertEquals(depositUnit, event.depositUnit());
     }
+
     {
       var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositSeekEvent.class);
       assertEquals("accountId", event.accountId());
@@ -195,6 +197,7 @@ public class WithdrawalReductionLeafEntityTest {
       assertEquals("leafId", event.leafId());
       assertEquals(BigDecimal.valueOf(5.00), event.amountNeeded());
     }
+
     var state = testKit.getState();
     assertEquals("accountId", state.accountId());
     assertEquals("withdrawalId", state.withdrawalId());
@@ -210,6 +213,7 @@ public class WithdrawalReductionLeafEntityTest {
     var result = testKit.call(e -> e.depositFound(command));
     assertTrue(result.isReply());
     assertEquals("OK", result.getReply());
+
     {
       var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
       assertEquals("accountId", event.accountId());
@@ -217,6 +221,7 @@ public class WithdrawalReductionLeafEntityTest {
       assertEquals("leafId", event.leafId());
       assertEquals(depositUnit, event.depositUnit());
     }
+
     {
       var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.FullyFundedEvent.class);
       assertEquals("accountId", event.accountId());
@@ -224,6 +229,7 @@ public class WithdrawalReductionLeafEntityTest {
       assertEquals("leafId", event.leafId());
       assertEquals(BigDecimal.valueOf(10.00), event.amount());
     }
+
     var state = testKit.getState();
     assertEquals("accountId", state.accountId());
     assertEquals("withdrawalId", state.withdrawalId());
@@ -231,5 +237,85 @@ public class WithdrawalReductionLeafEntityTest {
     assertEquals(BigDecimal.valueOf(10.00), state.amountToWithdraw());
     assertEquals(BigDecimal.valueOf(10.00), state.amountWithdrawn());
     assertEquals(2, state.depositUnits().size());
+  }
+
+  @Test
+  public void onePartialDepositThenSecondDepositToComplete() {
+    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+
+    {
+      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(4.94));
+      var result = testKit.call(e -> e.createLeaf(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+    }
+
+    {
+      var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-1", "deposit-1", "unit-1", BigDecimal.valueOf(4.93));
+      var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+      var result = testKit.call(e -> e.depositFound(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+
+      {
+        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals(depositUnit, event.depositUnit());
+      }
+
+      {
+        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositSeekEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals(BigDecimal.valueOf(0.01), event.amountNeeded());
+      }
+
+      {
+        var state = testKit.getState();
+        assertEquals("accountId", state.accountId());
+        assertEquals("withdrawalId", state.withdrawalId());
+        assertEquals("leafId", state.leafId());
+        assertEquals(BigDecimal.valueOf(4.94), state.amountToWithdraw());
+        assertEquals(BigDecimal.valueOf(4.93), state.amountWithdrawn());
+        assertEquals(1, state.depositUnits().size());
+      }
+    }
+
+    {
+      var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-1", "deposit-1", "unit-2", BigDecimal.valueOf(0.01));
+      var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+      var result = testKit.call(e -> e.depositFound(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+
+      {
+        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals(depositUnit, event.depositUnit());
+      }
+
+      {
+        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.FullyFundedEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals(BigDecimal.valueOf(4.94), event.amount());
+      }
+
+      {
+        var state = testKit.getState();
+        assertEquals("accountId", state.accountId());
+        assertEquals("withdrawalId", state.withdrawalId());
+        assertEquals("leafId", state.leafId());
+        assertEquals(BigDecimal.valueOf(4.94), state.amountToWithdraw());
+        assertEquals(BigDecimal.valueOf(4.94), state.amountWithdrawn());
+        assertEquals(2, state.depositUnits().size());
+      }
+    }
   }
 }
