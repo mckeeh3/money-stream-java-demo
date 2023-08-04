@@ -7,22 +7,22 @@ import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
-import io.example.bank.WithdrawalReductionLeafEntity.Event;
-import io.example.bank.WithdrawalReductionLeafEntity.State;
+import io.example.bank.WithdrawalRedLeafEntity.Event;
+import io.example.bank.WithdrawalRedLeafEntity.State;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 
-public class WithdrawalReductionLeafEntityTest {
+public class WithdrawalRedLeafEntityTest {
   @Test
   public void createLeafTest() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositSeekEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -37,7 +37,7 @@ public class WithdrawalReductionLeafEntityTest {
     }
 
     { // duplicate command test
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -48,24 +48,24 @@ public class WithdrawalReductionLeafEntityTest {
 
   @Test
   public void depositFoundFullAmountTest() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
     {
-      var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-2", "deposit-1", "unit-1", BigDecimal.valueOf(10.00));
-      var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+      var depositUnit = new WithdrawalRedLeafEntity.DepositUnit("account-2", "deposit-1", "unit-1", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
       var result = testKit.call(e -> e.depositFound(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositFoundEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());
@@ -73,7 +73,7 @@ public class WithdrawalReductionLeafEntityTest {
       }
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.FullyFundedEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.FullyFundedEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());
@@ -91,10 +91,10 @@ public class WithdrawalReductionLeafEntityTest {
 
   @Test
   public void multipleSeeksToGetFullWithdrawalAmountNeededTest() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -109,22 +109,22 @@ public class WithdrawalReductionLeafEntityTest {
 
   @Test
   public void leafNotFoundTest() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
     {
-      var command = new WithdrawalReductionLeafEntity.DepositNotFoundCommand("accountId", "withdrawalId", "leafId");
+      var command = new WithdrawalRedLeafEntity.DepositNotFoundCommand("accountId", "withdrawalId", "leafId");
       var result = testKit.call(e -> e.depositNotFound(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositNotFoundEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositNotFoundEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -141,10 +141,10 @@ public class WithdrawalReductionLeafEntityTest {
 
   @Test
   public void cancelWithdrawalTest() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -154,12 +154,12 @@ public class WithdrawalReductionLeafEntityTest {
     fullyFundedSeekResult(testKit);
 
     {
-      var command = new WithdrawalReductionLeafEntity.CancelWithdrawalCommand("accountId", "withdrawalId", "leafId");
+      var command = new WithdrawalRedLeafEntity.CancelWithdrawalCommand("accountId", "withdrawalId", "leafId");
       var result = testKit.call(e -> e.cancelWithdrawal(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.CanceledWithdrawalEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.CanceledWithdrawalEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -175,15 +175,15 @@ public class WithdrawalReductionLeafEntityTest {
     }
   }
 
-  private void partiallyFundedSeekResult(EventSourcedTestKit<State, Event, WithdrawalReductionLeafEntity> testKit) {
-    var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-1", "deposit-1", "unit-1", BigDecimal.valueOf(5.00));
-    var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+  private void partiallyFundedSeekResult(EventSourcedTestKit<State, Event, WithdrawalRedLeafEntity> testKit) {
+    var depositUnit = new WithdrawalRedLeafEntity.DepositUnit("account-1", "deposit-1", "unit-1", BigDecimal.valueOf(5.00));
+    var command = new WithdrawalRedLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
     var result = testKit.call(e -> e.depositFound(command));
     assertTrue(result.isReply());
     assertEquals("OK", result.getReply());
 
     {
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositFoundEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -191,7 +191,7 @@ public class WithdrawalReductionLeafEntityTest {
     }
 
     {
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositSeekEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -207,15 +207,15 @@ public class WithdrawalReductionLeafEntityTest {
     assertEquals(1, state.depositUnits().size());
   }
 
-  private void fullyFundedSeekResult(EventSourcedTestKit<State, Event, WithdrawalReductionLeafEntity> testKit) {
-    var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-2", "deposit-2", "unit-2", BigDecimal.valueOf(5.00));
-    var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+  private void fullyFundedSeekResult(EventSourcedTestKit<State, Event, WithdrawalRedLeafEntity> testKit) {
+    var depositUnit = new WithdrawalRedLeafEntity.DepositUnit("account-2", "deposit-2", "unit-2", BigDecimal.valueOf(5.00));
+    var command = new WithdrawalRedLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
     var result = testKit.call(e -> e.depositFound(command));
     assertTrue(result.isReply());
     assertEquals("OK", result.getReply());
 
     {
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositFoundEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -223,7 +223,7 @@ public class WithdrawalReductionLeafEntityTest {
     }
 
     {
-      var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.FullyFundedEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.FullyFundedEvent.class);
       assertEquals("accountId", event.accountId());
       assertEquals("withdrawalId", event.withdrawalId());
       assertEquals("leafId", event.leafId());
@@ -241,24 +241,24 @@ public class WithdrawalReductionLeafEntityTest {
 
   @Test
   public void onePartialDepositThenSecondDepositToComplete() {
-    var testKit = EventSourcedTestKit.of(WithdrawalReductionLeafEntity::new);
+    var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalReductionLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(4.94));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(4.94));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
     {
-      var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-1", "deposit-1", "unit-1", BigDecimal.valueOf(4.93));
-      var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+      var depositUnit = new WithdrawalRedLeafEntity.DepositUnit("account-1", "deposit-1", "unit-1", BigDecimal.valueOf(4.93));
+      var command = new WithdrawalRedLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
       var result = testKit.call(e -> e.depositFound(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositFoundEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());
@@ -266,7 +266,7 @@ public class WithdrawalReductionLeafEntityTest {
       }
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositSeekEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());
@@ -285,14 +285,14 @@ public class WithdrawalReductionLeafEntityTest {
     }
 
     {
-      var depositUnit = new WithdrawalReductionLeafEntity.DepositUnit("account-1", "deposit-1", "unit-2", BigDecimal.valueOf(0.01));
-      var command = new WithdrawalReductionLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
+      var depositUnit = new WithdrawalRedLeafEntity.DepositUnit("account-1", "deposit-1", "unit-2", BigDecimal.valueOf(0.01));
+      var command = new WithdrawalRedLeafEntity.DepositFoundCommand("accountId", "withdrawalId", "leafId", depositUnit);
       var result = testKit.call(e -> e.depositFound(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.DepositFoundEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositFoundEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());
@@ -300,7 +300,7 @@ public class WithdrawalReductionLeafEntityTest {
       }
 
       {
-        var event = result.getNextEventOfType(WithdrawalReductionLeafEntity.FullyFundedEvent.class);
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.FullyFundedEvent.class);
         assertEquals("accountId", event.accountId());
         assertEquals("withdrawalId", event.withdrawalId());
         assertEquals("leafId", event.leafId());

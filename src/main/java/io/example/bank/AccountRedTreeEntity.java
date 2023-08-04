@@ -18,13 +18,13 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 @Id("branchId")
-@TypeId("accountReductionTree")
-@RequestMapping("/accountReductionTree/{branchId}")
-public class AccountReductionTreeEntity extends EventSourcedEntity<AccountReductionTreeEntity.State, AccountReductionTreeEntity.Event> {
-  private static final Logger log = LoggerFactory.getLogger(AccountReductionTreeEntity.class);
+@TypeId("accountRedTree")
+@RequestMapping("/accountRedTree/{branchId}")
+public class AccountRedTreeEntity extends EventSourcedEntity<AccountRedTreeEntity.State, AccountRedTreeEntity.Event> {
+  private static final Logger log = LoggerFactory.getLogger(AccountRedTreeEntity.class);
   private final String entityId;
 
-  public AccountReductionTreeEntity(EventSourcedEntityContext context) {
+  public AccountRedTreeEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
   }
 

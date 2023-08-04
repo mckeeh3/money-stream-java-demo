@@ -21,13 +21,13 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 @Id("leafId")
-@TypeId("withdrawalReductionLeaf")
-@RequestMapping("/withdrawalReductionLeaf/{leafId}")
-public class WithdrawalReductionLeafEntity extends EventSourcedEntity<WithdrawalReductionLeafEntity.State, WithdrawalReductionLeafEntity.Event> {
-  private static final Logger log = LoggerFactory.getLogger(WithdrawalReductionLeafEntity.class);
+@TypeId("withdrawalRedLeaf")
+@RequestMapping("/withdrawalRedLeaf/{leafId}")
+public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLeafEntity.State, WithdrawalRedLeafEntity.Event> {
+  private static final Logger log = LoggerFactory.getLogger(WithdrawalRedLeafEntity.class);
   private final String entityId;
 
-  public WithdrawalReductionLeafEntity(EventSourcedEntityContext context) {
+  public WithdrawalRedLeafEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
   }
 
@@ -81,7 +81,7 @@ public class WithdrawalReductionLeafEntity extends EventSourcedEntity<Withdrawal
     log.info("EntityId: {}\n_State: {}\n_GetWithdrawal", entityId, currentState());
 
     return Validator.<Effect<State>>start()
-        .isTrue(currentState().isEmpty(), "WithdrawalReductionLeaf not found")
+        .isTrue(currentState().isEmpty(), "WithdrawalRedLeaf not found")
         .onError(errorMessage -> effects().error(errorMessage, Status.Code.NOT_FOUND))
         .onSuccess(() -> effects().reply(currentState()));
   }

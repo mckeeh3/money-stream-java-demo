@@ -1,6 +1,6 @@
 @urlPrefix = http://localhost:9000
 @withdrawalId = withdrawal-1
 
-### query withdrawal reduction leaves
+### query withdrawal Red leaves
 
-GET {{urlPrefix}}/withdrawalReductionLeaves/{{withdrawalId}}
+GET {{urlPrefix}}/withdrawalRedLeaves/{{withdrawalId}}

@@ -14,16 +14,16 @@ import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 
-@ViewId("withdrawalReductionLeafView")
-@Table("withdrawal_reduction_leaf")
-@Subscribe.EventSourcedEntity(value = WithdrawalReductionLeafEntity.class, ignoreUnknown = true)
-public class WithdrawalReductionLeafView extends View<WithdrawalReductionLeafView.LeafRow> {
-  private static final Logger log = LoggerFactory.getLogger(WithdrawalReductionLeafView.class);
+@ViewId("withdrawalRedLeafView")
+@Table("withdrawal_Red_leaf")
+@Subscribe.EventSourcedEntity(value = WithdrawalRedLeafEntity.class, ignoreUnknown = true)
+public class WithdrawalRedLeafView extends View<WithdrawalRedLeafView.LeafRow> {
+  private static final Logger log = LoggerFactory.getLogger(WithdrawalRedLeafView.class);
 
-  @GetMapping("/withdrawalReductionLeaves/{withdrawalId}")
+  @GetMapping("/withdrawalRedLeaves/{withdrawalId}")
   @Query("""
       SELECT * AS leaves
-        FROM withdrawal_reduction_leaf
+        FROM withdrawal_Red_leaf
        WHERE withdrawalId = :withdrawalId
       """)
   public Leaves getLeaves(@PathVariable String withdrawalId) {
@@ -35,7 +35,7 @@ public class WithdrawalReductionLeafView extends View<WithdrawalReductionLeafVie
     return LeafRow.emptyState();
   }
 
-  public UpdateEffect<LeafRow> on(WithdrawalReductionLeafEntity.DepositSeekEvent event) {
+  public UpdateEffect<LeafRow> on(WithdrawalRedLeafEntity.DepositSeekEvent event) {
     log.info("State: {}\n_Event: {}", viewState(), event);
     return effects()
         .updateState(viewState().on(event));
@@ -49,14 +49,14 @@ public class WithdrawalReductionLeafView extends View<WithdrawalReductionLeafVie
       return new LeafRow(null, null, null, BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
-    public LeafRow on(WithdrawalReductionLeafEntity.DepositSeekEvent event) {
+    public LeafRow on(WithdrawalRedLeafEntity.DepositSeekEvent event) {
       return new LeafRow(event.accountId(), event.withdrawalId(), event.leafId(), event.amountNeeded(), balance);
     }
 
-    public LeafRow on(WithdrawalReductionLeafEntity.DepositFoundEvent event) {
+    public LeafRow on(WithdrawalRedLeafEntity.DepositFoundEvent event) {
       var amountToWithdraw = event.amountToWithdraw();
       var amountWithdrawn = event.depositUnits().stream()
-          .map(WithdrawalReductionLeafEntity.DepositUnit::amount)
+          .map(WithdrawalRedLeafEntity.DepositUnit::amount)
           .reduce(BigDecimal.ZERO, BigDecimal::add);
       return new LeafRow(accountId, withdrawalId, leafId, amountToWithdraw, amountWithdrawn);
     }

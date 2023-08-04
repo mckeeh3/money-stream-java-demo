@@ -6,22 +6,22 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.example.bank.WithdrawalReductionLeafEntity.DepositSeekEvent;
+import io.example.bank.WithdrawalRedLeafEntity.DepositSeekEvent;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
 
-@Subscribe.EventSourcedEntity(value = WithdrawalReductionLeafEntity.class, ignoreUnknown = true)
-public class WithdrawalReductionLeafToDepositUnitAction extends Action {
-  private static final Logger log = LoggerFactory.getLogger(WithdrawalReductionLeafToDepositUnitAction.class);
+@Subscribe.EventSourcedEntity(value = WithdrawalRedLeafEntity.class, ignoreUnknown = true)
+public class WithdrawalRedLeafToDepositUnitAction extends Action {
+  private static final Logger log = LoggerFactory.getLogger(WithdrawalRedLeafToDepositUnitAction.class);
   private static final Random random = new Random();
   private final ComponentClient componentClient;
 
-  public WithdrawalReductionLeafToDepositUnitAction(ComponentClient componentClient) {
+  public WithdrawalRedLeafToDepositUnitAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  public Effect<String> on(WithdrawalReductionLeafEntity.DepositSeekEvent event) {
+  public Effect<String> on(WithdrawalRedLeafEntity.DepositSeekEvent event) {
     log.info("Event: {}", event);
     return effects().asyncReply(queryView(event));
   }
@@ -56,9 +56,9 @@ public class WithdrawalReductionLeafToDepositUnitAction extends Action {
   }
 
   private CompletionStage<String> callFor(DepositSeekEvent event) {
-    var command = new WithdrawalReductionLeafEntity.CancelWithdrawalCommand(event.accountId(), event.withdrawalId(), event.leafId());
+    var command = new WithdrawalRedLeafEntity.CancelWithdrawalCommand(event.accountId(), event.withdrawalId(), event.leafId());
     return componentClient.forEventSourcedEntity(event.leafId())
-        .call(WithdrawalReductionLeafEntity::cancelWithdrawal)
+        .call(WithdrawalRedLeafEntity::cancelWithdrawal)
         .params(command)
         .execute();
   }

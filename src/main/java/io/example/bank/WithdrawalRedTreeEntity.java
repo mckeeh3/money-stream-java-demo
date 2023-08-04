@@ -22,14 +22,14 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 @Id("branchId")
-@TypeId("withdrawalReductionTree")
+@TypeId("withdrawalRedTree")
 @RequestMapping("/withdrawal/{branchId}")
-public class WithdrawalReductionTreeEntity extends EventSourcedEntity<WithdrawalReductionTreeEntity.State, WithdrawalReductionTreeEntity.Event> {
+public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTreeEntity.State, WithdrawalRedTreeEntity.Event> {
   private static final Logger log = LoggerFactory.getLogger(WithdrawalEntity.class);
   static final BigDecimal maxLeafAmount = BigDecimal.valueOf(25.00);
   private final String entityId;
 
-  public WithdrawalReductionTreeEntity(EventSourcedEntityContext context) {
+  public WithdrawalRedTreeEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
   }
 

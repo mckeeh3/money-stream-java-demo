@@ -7,28 +7,28 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
 
-@Subscribe.EventSourcedEntity(value = AccountReductionTreeEntity.class, ignoreUnknown = true)
-public class AccountReductionTreeAction extends Action {
-  private static final Logger log = LoggerFactory.getLogger(AccountReductionTreeAction.class);
+@Subscribe.EventSourcedEntity(value = AccountRedTreeEntity.class, ignoreUnknown = true)
+public class AccountRedTreeAction extends Action {
+  private static final Logger log = LoggerFactory.getLogger(AccountRedTreeAction.class);
   private final ComponentClient componentClient;
 
-  public AccountReductionTreeAction(ComponentClient componentClient) {
+  public AccountRedTreeAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  public Effect<String> on(AccountReductionTreeEntity.UpdatedBranchEvent event) {
+  public Effect<String> on(AccountRedTreeEntity.UpdatedBranchEvent event) {
     log.info("Event: {}", event);
 
     var branchId = event.branchId();
 
-    var command = new AccountReductionTreeEntity.ReleaseBranchCommand(event.branchId());
+    var command = new AccountRedTreeEntity.ReleaseBranchCommand(event.branchId());
     return effects()
         .forward(componentClient.forEventSourcedEntity(branchId.toEntityId())
-            .call(AccountReductionTreeEntity::releaseBranch)
+            .call(AccountRedTreeEntity::releaseBranch)
             .params(command));
   }
 
-  public Effect<String> on(AccountReductionTreeEntity.ReleasedBranchEvent event) {
+  public Effect<String> on(AccountRedTreeEntity.ReleasedBranchEvent event) {
     log.info("Event: {}", event);
 
     var branchId = event.branchId();
@@ -42,10 +42,10 @@ public class AccountReductionTreeAction extends Action {
     }
 
     var upperBranchId = branchId.levelUp();
-    var command = new AccountReductionTreeEntity.UpdateSubbranchCommand(upperBranchId, event.subbranch().subbranchId(), event.subbranch().amount());
+    var command = new AccountRedTreeEntity.UpdateSubbranchCommand(upperBranchId, event.subbranch().subbranchId(), event.subbranch().amount());
     return effects()
         .forward(componentClient.forEventSourcedEntity(upperBranchId.toEntityId())
-            .call(AccountReductionTreeEntity::updateSubbranch)
+            .call(AccountRedTreeEntity::updateSubbranch)
             .params(command));
   }
 }
