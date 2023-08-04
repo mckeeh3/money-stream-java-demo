@@ -1,0 +1,6 @@
+@urlPrefix = http://localhost:9000
+@branchId = a433e503-13a0-4b4e-b855-616d77e3132b
+
+### get a tree branch
+
+GET {{urlPrefix}}/withdrawalRedTree/{{branchId}}

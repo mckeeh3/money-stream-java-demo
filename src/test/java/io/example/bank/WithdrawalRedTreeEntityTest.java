@@ -18,7 +18,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", "trunkId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createTrunk(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -47,7 +47,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "parentBranchId", "branchId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "branchId", "parentBranchId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createBranch(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -76,7 +76,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "parentBranchId", "branchId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "branchId", "parentBranchId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createBranch(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -111,7 +111,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "parentBranchId", "branchId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "branchId", "parentBranchId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createBranch(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -169,7 +169,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "parentBranchId", "branchId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.BranchCreateCommand("accountId", "withdrawalId", "branchId", "parentBranchId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createBranch(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -197,7 +197,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", "trunkId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createTrunk(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -225,7 +225,7 @@ public class WithdrawalRedTreeEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedTreeEntity::new);
 
     {
-      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", BigDecimal.valueOf(123.45));
+      var command = new WithdrawalRedTreeEntity.TrunkCreateCommand("accountId", "withdrawalId", "trunkId", BigDecimal.valueOf(123.45));
       var result = testKit.call(e -> e.createTrunk(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -238,6 +238,7 @@ public class WithdrawalRedTreeEntityTest {
       var reply = result.getReply();
       assertEquals("accountId", reply.accountId());
       assertEquals("withdrawalId", reply.withdrawalId());
+      assertNotNull(reply.branchId());
       assertNull(reply.parentBranchId());
       assertNotNull(reply.branchId());
       assertEquals(0, reply.amountToWithdraw().compareTo(BigDecimal.valueOf(123.45)));

@@ -30,7 +30,7 @@ public class WithdrawalRedTreeAction extends Action {
 
     var resultsBranches = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) > 0)
-        .map(subbranch -> new WithdrawalRedTreeEntity.BranchCreateCommand(event.accountId(), event.withdrawalId(), event.parentBranchId(), subbranch.branchId(), subbranch.amountToWithdraw()))
+        .map(subbranch -> new WithdrawalRedTreeEntity.BranchCreateCommand(event.accountId(), event.withdrawalId(), subbranch.branchId(), event.branchId(), subbranch.amountToWithdraw()))
         .map(command -> componentClient.forEventSourcedEntity(command.branchId())
             .call(WithdrawalRedTreeEntity::createBranch)
             .params(command))
@@ -39,7 +39,7 @@ public class WithdrawalRedTreeAction extends Action {
 
     var resultsLeaves = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) <= 0)
-        .map(subbranch -> new WithdrawalRedLeafEntity.LeafCreateCommand(event.accountId(), event.withdrawalId(), subbranch.branchId(), subbranch.amountToWithdraw()))
+        .map(subbranch -> new WithdrawalRedLeafEntity.LeafCreateCommand(event.accountId(), event.withdrawalId(), subbranch.branchId(), event.branchId(), subbranch.amountToWithdraw()))
         .map(command -> componentClient.forEventSourcedEntity(command.leafId())
             .call(WithdrawalRedLeafEntity::createLeaf)
             .params(command))

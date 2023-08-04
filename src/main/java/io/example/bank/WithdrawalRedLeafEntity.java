@@ -45,7 +45,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
     }
 
     return effects()
-        .emitEvent(currentState().eventFor(command))
+        .emitEvents(currentState().eventsFor(command))
         .thenReply(__ -> "OK");
   }
 
@@ -87,6 +87,12 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
   }
 
   @EventHandler
+  public State on(LeafCreatedEvent event) {
+    log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
+    return currentState().on(event);
+  }
+
+  @EventHandler
   public State on(DepositSeekEvent event) {
     log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
     return currentState().on(event);
@@ -120,28 +126,34 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
       String accountId,
       String withdrawalId,
       String leafId,
+      String parentBranchId,
       LocalDateTime lastUpdated,
       BigDecimal amountToWithdraw,
       BigDecimal amountWithdrawn,
       List<DepositUnit> depositUnits) {
 
     static State emptyState() {
-      return new State(null, null, null, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO, BigDecimal.ZERO, List.of());
+      return new State(null, null, null, null, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO, BigDecimal.ZERO, List.of());
     }
 
     boolean isEmpty() {
       return withdrawalId == null || withdrawalId.isEmpty();
     }
 
-    Event eventFor(LeafCreateCommand command) {
-      return new DepositSeekEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.amount());
+    List<Event> eventsFor(LeafCreateCommand command) {
+      if (isEmpty()) {
+        return List.of(
+            new LeafCreatedEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.parentBranchId(), command.amount()),
+            new DepositSeekEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.amount()));
+      }
+      return List.of();
     }
 
     List<Event> eventsFor(DepositFoundCommand command) {
       var newState = on(new DepositFoundEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.depositUnit(), BigDecimal.ZERO, List.of()));
       var foundEvent = new DepositFoundEvent(command.accountId(), command.withdrawalId(), command.leafId(), command.depositUnit(), amountToWithdraw, depositUnits);
       if (newState.amountWithdrawn().compareTo(newState.amountToWithdraw()) >= 0) {
-        var FullyFundedEvent = new FullyFundedEvent(command.accountId(), command.withdrawalId(), command.leafId(), newState.amountWithdrawn());
+        var FullyFundedEvent = new FullyFundedEvent(command.accountId(), command.withdrawalId(), command.leafId(), parentBranchId, newState.amountWithdrawn());
         return List.of(foundEvent, FullyFundedEvent);
       }
       var seekEvent = new DepositSeekEvent(command.accountId(), command.withdrawalId(), command.leafId(), newState.amountToWithdraw().subtract(newState.amountWithdrawn()));
@@ -156,10 +168,22 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
       return new CanceledWithdrawalEvent(command.accountId(), command.withdrawalId(), command.leafId(), depositUnits);
     }
 
-    State on(DepositSeekEvent event) {
+    State on(LeafCreatedEvent event) {
       if (isEmpty()) {
-        return new State(event.accountId(), event.withdrawalId(), event.leafId(), LocalDateTime.now(), event.amountNeeded(), BigDecimal.ZERO, List.of());
+        return new State(
+            event.accountId(),
+            event.withdrawalId(),
+            event.leafId(),
+            event.parentBranchId(),
+            LocalDateTime.now(),
+            event.amount(),
+            BigDecimal.ZERO,
+            List.of());
       }
+      return this;
+    }
+
+    State on(DepositSeekEvent event) {
       return this;
     }
 
@@ -172,7 +196,15 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
           .map(DepositUnit::amount)
           .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-      return new State(accountId, withdrawalId, leafId, LocalDateTime.now(), amountToWithdraw, newAmountWithdrawn, newDepositUnits);
+      return new State(
+          accountId,
+          withdrawalId,
+          leafId,
+          parentBranchId,
+          LocalDateTime.now(),
+          amountToWithdraw,
+          newAmountWithdrawn,
+          newDepositUnits);
     }
 
     State on(FullyFundedEvent event) {
@@ -184,13 +216,23 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
     }
 
     State on(CanceledWithdrawalEvent event) {
-      return new State(accountId, withdrawalId, leafId, LocalDateTime.now(), amountToWithdraw, BigDecimal.ZERO, List.of());
+      return new State(
+          accountId,
+          withdrawalId,
+          leafId,
+          parentBranchId,
+          LocalDateTime.now(),
+          amountToWithdraw,
+          BigDecimal.ZERO,
+          List.of());
     }
   }
 
   public interface Event {}
 
-  public record LeafCreateCommand(String accountId, String withdrawalId, String leafId, BigDecimal amount) {}
+  public record LeafCreateCommand(String accountId, String withdrawalId, String leafId, String parentBranchId, BigDecimal amount) {}
+
+  public record LeafCreatedEvent(String accountId, String withdrawalId, String leafId, String parentBranchId, BigDecimal amount) implements Event {}
 
   public record DepositSeekEvent(String accountId, String withdrawalId, String leafId, BigDecimal amountNeeded) implements Event {}
 
@@ -200,7 +242,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
 
   public record DepositFoundEvent(String accountId, String withdrawalId, String leafId, DepositUnit depositUnit, BigDecimal amountToWithdraw, List<DepositUnit> depositUnits) implements Event {}
 
-  public record FullyFundedEvent(String accountId, String withdrawalId, String leafId, BigDecimal amount) implements Event {}
+  public record FullyFundedEvent(String accountId, String withdrawalId, String leafId, String parentBranchId, BigDecimal amount) implements Event {}
 
   public record DepositNotFoundCommand(String accountId, String withdrawalId, String leafId) {}
 

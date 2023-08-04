@@ -17,27 +17,39 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
-      assertEquals("accountId", event.accountId());
-      assertEquals("withdrawalId", event.withdrawalId());
-      assertEquals("leafId", event.leafId());
-      assertEquals(BigDecimal.valueOf(10.00), event.amountNeeded());
+      {
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.LeafCreatedEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals("parentId", event.parentBranchId());
+      }
 
-      var state = testKit.getState();
-      assertEquals("accountId", state.accountId());
-      assertEquals("withdrawalId", state.withdrawalId());
-      assertEquals("leafId", state.leafId());
-      assertEquals(BigDecimal.valueOf(10.00), state.amountToWithdraw());
-      assertEquals(BigDecimal.ZERO, state.amountWithdrawn());
+      {
+        var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
+        assertEquals("accountId", event.accountId());
+        assertEquals("withdrawalId", event.withdrawalId());
+        assertEquals("leafId", event.leafId());
+        assertEquals(BigDecimal.valueOf(10.00), event.amountNeeded());
+      }
+
+      {
+        var state = testKit.getState();
+        assertEquals("accountId", state.accountId());
+        assertEquals("withdrawalId", state.withdrawalId());
+        assertEquals("leafId", state.leafId());
+        assertEquals(BigDecimal.valueOf(10.00), state.amountToWithdraw());
+        assertEquals(BigDecimal.ZERO, state.amountWithdrawn());
+      }
     }
 
     { // duplicate command test
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -51,7 +63,7 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -94,7 +106,7 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -112,7 +124,7 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -144,7 +156,7 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(10.00));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -244,7 +256,7 @@ public class WithdrawalRedLeafEntityTest {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", BigDecimal.valueOf(4.94));
+      var command = new WithdrawalRedLeafEntity.LeafCreateCommand("accountId", "withdrawalId", "leafId", "parentId", BigDecimal.valueOf(4.94));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());

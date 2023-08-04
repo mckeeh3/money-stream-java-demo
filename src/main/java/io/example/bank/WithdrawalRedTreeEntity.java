@@ -23,9 +23,9 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 @Id("branchId")
 @TypeId("withdrawalRedTree")
-@RequestMapping("/withdrawal/{branchId}")
+@RequestMapping("/withdrawalRedTree/{branchId}")
 public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTreeEntity.State, WithdrawalRedTreeEntity.Event> {
-  private static final Logger log = LoggerFactory.getLogger(WithdrawalEntity.class);
+  private static final Logger log = LoggerFactory.getLogger(WithdrawalRedTreeEntity.class);
   static final BigDecimal maxLeafAmount = BigDecimal.valueOf(25.00);
   private final String entityId;
 
@@ -76,7 +76,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
   }
 
   // When an insufficient funds message reaches the trunk, the trunk emits a canceled withdrawal event
-  // that cascades up to the top of the tree.
+  // that cascades up to the top of the tree to the leaves.
   @PutMapping("/cancelWithdrawal")
   public Effect<String> cancelWithdrawal(@RequestBody CancelWithdrawalCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
@@ -141,11 +141,10 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
     Event eventFor(TrunkCreateCommand command) {
       String parentId = null;
-      var branchId = UUID.randomUUID().toString();
       var subbranches = distributeAmount(command.amount()).stream()
           .map(amount -> new Subbranch(command.accountId(), command.withdrawalId(), UUID.randomUUID().toString(), amount, BigDecimal.ZERO))
           .toList();
-      return new BranchCreatedEvent(command.accountId(), command.withdrawalId(), parentId, branchId, command.amount(), subbranches);
+      return new BranchCreatedEvent(command.accountId(), command.withdrawalId(), command.branchId(), parentId, command.amount(), subbranches);
     }
 
     Event eventFor(BranchCreateCommand command) {
@@ -153,7 +152,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
       var subbranches = distributeAmount(command.amount()).stream()
           .map(amount -> new Subbranch(command.accountId(), command.withdrawalId(), UUID.randomUUID().toString(), amount, BigDecimal.ZERO))
           .toList();
-      return new BranchCreatedEvent(command.accountId(), command.withdrawalId(), command.parentBranchId(), branchId, command.amount(), subbranches);
+      return new BranchCreatedEvent(command.accountId(), command.withdrawalId(), branchId, command.parentBranchId(), command.amount(), subbranches);
     }
 
     Event eventFor(UpdateAmountWithdrawnCommand command) {
@@ -164,7 +163,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
       if (parentBranchId == null) {
         return new CanceledWithdrawalEvent(command.accountId(), command.withdrawalId(), parentBranchId, subbranches.stream().map(Subbranch::branchId).toList());
       }
-      return new InsufficientFundsEvent(command.accountId(), command.withdrawalId(), parentBranchId, command.branchId());
+      return new InsufficientFundsEvent(command.accountId(), command.withdrawalId(), command.branchId(), parentBranchId);
     }
 
     Event eventFor(CancelWithdrawalCommand command) {
@@ -254,13 +253,13 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
   public interface Event {}
 
-  public record TrunkCreateCommand(String accountId, String withdrawalId, BigDecimal amount) {}
+  public record TrunkCreateCommand(String accountId, String withdrawalId, String branchId, BigDecimal amount) {}
 
-  public record BranchCreateCommand(String accountId, String withdrawalId, String parentBranchId, String branchId, BigDecimal amount) {}
+  public record BranchCreateCommand(String accountId, String withdrawalId, String branchId, String parentBranchId, BigDecimal amount) {}
 
   public record Subbranch(String accountId, String transactionId, String branchId, BigDecimal amountToWithdraw, BigDecimal amountWithdrawn) {}
 
-  public record BranchCreatedEvent(String accountId, String withdrawalId, String parentBranchId, String branchId, BigDecimal amount, List<Subbranch> subbranches) implements Event {}
+  public record BranchCreatedEvent(String accountId, String withdrawalId, String branchId, String parentBranchId, BigDecimal amount, List<Subbranch> subbranches) implements Event {}
 
   public record UpdateAmountWithdrawnCommand(String accountId, String withdrawalId, String branchId, Subbranch subbranch) {}
 
@@ -268,7 +267,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
   public record InsufficientFundsCommand(String accountId, String withdrawalId, String branchId) {}
 
-  public record InsufficientFundsEvent(String accountId, String withdrawalId, String parentBranchId, String branchId) implements Event {}
+  public record InsufficientFundsEvent(String accountId, String withdrawalId, String branchId, String parentBranchId) implements Event {}
 
   public record CancelWithdrawalCommand(String accountId, String withdrawalId, String branchId) {}
 

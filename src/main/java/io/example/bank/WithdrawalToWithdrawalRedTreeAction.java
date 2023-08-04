@@ -1,5 +1,7 @@
 package io.example.bank;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +21,11 @@ public class WithdrawalToWithdrawalRedTreeAction extends Action {
   public Effect<String> on(WithdrawalEntity.WithdrawnEvent event) {
     log.info("Event: {}", event);
 
-    var command = new WithdrawalRedTreeEntity.TrunkCreateCommand(event.accountId(), event.withdrawalId(), event.amount());
+    var branchId = UUID.randomUUID().toString();
+    var command = new WithdrawalRedTreeEntity.TrunkCreateCommand(event.accountId(), event.withdrawalId(), branchId, event.amount());
 
     return effects()
-        .forward(componentClient.forEventSourcedEntity(event.accountId())
+        .forward(componentClient.forEventSourcedEntity(branchId)
             .call(WithdrawalRedTreeEntity::createTrunk)
             .params(command));
   }
