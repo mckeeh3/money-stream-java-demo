@@ -29,7 +29,7 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
   private CompletionStage<String> queryView(DepositSeekEvent event) {
     return componentClient.forView()
         .call(DepositUnitsAvailableView::getDepositUnitsAvailable)
-        .params(event.accountId())
+        .params(event.withdrawalRedLeafId().accountId())
         .execute()
         .thenCompose(queryResults -> processQueryResults(event, queryResults));
   }
@@ -48,7 +48,7 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
   }
 
   private CompletionStage<String> callFor(DepositSeekEvent event, DepositUnitsAvailableView.DepositUnitRow row) {
-    var command = new DepositUnitEntity.WithdrawCommand(event.accountId(), event.withdrawalId(), event.leafId(), event.amountNeeded());
+    var command = new DepositUnitEntity.WithdrawCommand(event.withdrawalRedLeafId(), event.amountNeeded());
     return componentClient.forEventSourcedEntity(row.unitId())
         .call(DepositUnitEntity::withdraw)
         .params(command)
@@ -56,8 +56,8 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
   }
 
   private CompletionStage<String> callFor(DepositSeekEvent event) {
-    var command = new WithdrawalRedLeafEntity.CancelWithdrawalCommand(event.accountId(), event.withdrawalId(), event.leafId());
-    return componentClient.forEventSourcedEntity(event.leafId())
+    var command = new WithdrawalRedLeafEntity.CancelWithdrawalCommand(event.withdrawalRedLeafId());
+    return componentClient.forEventSourcedEntity(event.withdrawalRedLeafId().toEntityId())
         .call(WithdrawalRedLeafEntity::cancelWithdrawal)
         .params(command)
         .execute();

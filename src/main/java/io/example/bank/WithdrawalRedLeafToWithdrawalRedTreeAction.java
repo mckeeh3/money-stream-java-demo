@@ -18,13 +18,13 @@ public class WithdrawalRedLeafToWithdrawalRedTreeAction extends Action {
 
   public Effect<String> on(WithdrawalRedLeafEntity.FullyFundedEvent event) {
     log.info("Event: {}", event);
-    var accountId = event.accountId();
-    var withdrawalId = event.withdrawalId();
-    var branchId = event.parentBranchId();
-    var subbranch = new WithdrawalRedTreeEntity.Subbranch(event.accountId(), event.withdrawalId(), event.leafId(), event.amount(), event.amount());
-    var command = new WithdrawalRedTreeEntity.UpdateAmountWithdrawnCommand(accountId, withdrawalId, branchId, subbranch);
+    var withdrawalRedLeafId = event.withdrawalRedLeafId();
+    var subbranchId = new WithdrawalRedTreeEntity.WithdrawalRedTreeId(withdrawalRedLeafId.accountId(), withdrawalRedLeafId.withdrawalId(), withdrawalRedLeafId.leafId());
+    var subbranch = new WithdrawalRedTreeEntity.Subbranch(subbranchId, event.amount(), event.amount());
+    var command = new WithdrawalRedTreeEntity.UpdateAmountWithdrawnCommand(event.parentBranchId(), subbranch);
+
     return effects()
-        .forward(componentClient.forEventSourcedEntity(branchId)
+        .forward(componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
             .call(WithdrawalRedTreeEntity::updateAmountWithdrawn)
             .params(command));
   }

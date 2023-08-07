@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import io.example.Validator;
+import io.example.bank.WithdrawalRedLeafEntity.WithdrawalRedLeafId;
 import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
@@ -95,21 +96,35 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
     return currentState().on(event);
   }
 
+  public record DepositUnitId(String accountId, String depositId, String unitId) {
+    boolean isEmpty() {
+      return accountId == null || accountId.isEmpty()
+          || depositId == null || depositId.isEmpty()
+          || unitId == null || unitId.isEmpty();
+    }
+
+    DepositUnitId childId() {
+      return new DepositUnitId(accountId, depositId, UUID.randomUUID().toString());
+    }
+
+    String toEntityID() {
+      return "%s_%s_%s".formatted(accountId, depositId, unitId);
+    }
+  }
+
   public record State(
-      String accountId,
-      String depositId,
-      String unitId,
+      DepositUnitId depositUnitId,
       BigDecimal amount,
       BigDecimal balance,
       LocalDateTime lastUpdated,
       List<WithdrawLeaf> withdrawals) {
 
     static State emptyState() {
-      return new State(null, null, null, null, null, null, List.of());
+      return new State(null, null, null, null, List.of());
     }
 
     boolean isEmpty() {
-      return depositId == null;
+      return depositUnitId == null || depositUnitId.isEmpty();
     }
 
     boolean isDuplicateCommand(ModifyAmountCommand command) {
@@ -122,49 +137,48 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
 
     Event eventFor(ModifyAmountCommand command) {
       if (isAmountAdjustmentCompleted(command.amount)) {
-        return new ModifiedAmountEvent(command.accountId, command.depositId(), command.unitId, command.amount, List.of());
+        return new ModifiedAmountEvent(command.depositUnitId, command.amount, List.of());
       }
       var modifyAmounts = distributeAmount(command.amount())
-          .stream().map(amount -> new ModifyAmount(UUID.randomUUID().toString(), amount)).toList();
-      var firstModifyAmount = new ModifyAmount(command.unitId, modifyAmounts.get(0).amount());
+          .stream().map(amount -> new ModifyAmount(command.depositUnitId.childId(), amount)).toList();
+      var firstModifyAmount = new ModifyAmount(command.depositUnitId, modifyAmounts.get(0).amount());
       modifyAmounts = Stream.concat(Stream.of(firstModifyAmount), modifyAmounts.stream().skip(1)).toList();
 
-      return new ModifiedAmountEvent(command.accountId, command.depositId(), command.unitId, command.amount, modifyAmounts);
+      return new ModifiedAmountEvent(command.depositUnitId, command.amount, modifyAmounts);
     }
 
     Event eventFor(WithdrawCommand command) {
       var currentBalance = amount.subtract(sum(withdrawals));
       var withdrawalAmount = command.withDrawalRequestAmount().min(currentBalance);
       var newBalance = currentBalance.subtract(withdrawalAmount);
-      var depositUnit = new DepositUnit(accountId, depositId, unitId, amount, newBalance, withdrawalAmount);
-      var withdrawalLeaf = new WithdrawLeaf(command.withdrawalAccountId, command.withdrawalId, command.withdrawalLeafId, withdrawalAmount);
-      return new WithdrawnEvent(withdrawalLeaf, depositUnit);
+      var depositUnit = new DepositUnit(depositUnitId, amount, newBalance, withdrawalAmount);
+      return new WithdrawnEvent(command.withdrawalRedLeafId, depositUnit);
     }
 
     Event eventFor(WithdrawalCancelCommand command) {
-      var filtered = withdrawals.stream().filter(w -> !withdrawalIdEquals(w, command)).toList();
+      var filtered = withdrawals.stream().filter(w -> !w.withdrawalRedLeafId().equals(command.withdrawalRedLeafId())).toList();
       var newBalance = amount.subtract(sum(filtered));
-      return new WithdrawalCancelledEvent(command.accountId, command.withdrawalId, command.leafId, amount, newBalance);
+      return new WithdrawalCancelledEvent(command.withdrawalRedLeafId(), amount, newBalance);
     }
 
     State on(ModifiedAmountEvent event) {
-      return new State(event.accountId(), event.depositId(), event.unitId(), event.amount(), balance, LocalDateTime.now(), withdrawals);
+      return new State(event.depositUnitId, event.amount(), balance, LocalDateTime.now(), withdrawals);
     }
 
     State on(WithdrawnEvent event) {
       var withdrawalAmount = event.depositUnit.amountWithdrawn();
-      var withdrawal = new WithdrawLeaf(event.withdrawLeaf.accountId, event.withdrawLeaf.withdrawalId, event.withdrawLeaf.leafId, withdrawalAmount);
-      var filtered = withdrawals.stream().filter(w -> !withdrawalIdEquals(w, event)).toList();
+      var withdrawal = new WithdrawLeaf(event.withdrawalRedLeafId(), withdrawalAmount);
+      var filtered = withdrawals.stream().filter(w -> !w.withdrawalRedLeafId().equals(event.withdrawalRedLeafId())).toList();
       var newWithdrawals = Stream.concat(filtered.stream(), Stream.of(withdrawal)).toList();
       var newBalance = amount.subtract(sum(newWithdrawals));
 
-      return new State(accountId, depositId, unitId, amount, newBalance, LocalDateTime.now(), newWithdrawals);
+      return new State(depositUnitId, amount, newBalance, LocalDateTime.now(), newWithdrawals);
     }
 
     State on(WithdrawalCancelledEvent event) {
-      var filtered = withdrawals.stream().filter(w -> !withdrawalIdEquals(w, event)).toList();
+      var filtered = withdrawals.stream().filter(w -> !w.withdrawalRedLeafId().equals(event.withdrawalRedLeafId())).toList();
       var newBalance = amount.subtract(sum(filtered));
-      return new State(accountId, depositId, unitId, amount, newBalance, LocalDateTime.now(), filtered);
+      return new State(depositUnitId, amount, newBalance, LocalDateTime.now(), filtered);
     }
   }
 
@@ -188,41 +202,23 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
     return withdrawals.stream().map(withdrawal -> withdrawal.amount()).reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
-  private static boolean withdrawalIdEquals(WithdrawLeaf withdrawal, WithdrawalCancelCommand command) {
-    return withdrawal.accountId().equals(command.accountId)
-        && withdrawal.withdrawalId().equals(command.withdrawalId)
-        && withdrawal.leafId().equals(command.leafId);
-  }
-
-  private static boolean withdrawalIdEquals(WithdrawLeaf withdrawal, WithdrawnEvent event) {
-    return withdrawal.accountId().equals(event.withdrawLeaf.accountId)
-        && withdrawal.withdrawalId().equals(event.withdrawLeaf.withdrawalId)
-        && withdrawal.leafId().equals(event.withdrawLeaf.leafId);
-  }
-
-  private static boolean withdrawalIdEquals(WithdrawLeaf withdrawal, WithdrawalCancelledEvent event) {
-    return withdrawal.accountId().equals(event.accountId)
-        && withdrawal.withdrawalId().equals(event.withdrawalId)
-        && withdrawal.leafId().equals(event.leafId);
-  }
-
   public interface Event {}
 
-  public record ModifyAmountCommand(String accountId, String depositId, String unitId, BigDecimal amount) {}
+  public record ModifyAmountCommand(DepositUnitId depositUnitId, BigDecimal amount) {}
 
-  public record ModifyAmount(String unitId, BigDecimal amount) {}
+  public record ModifyAmount(DepositUnitId depositUnitId, BigDecimal amount) {}
 
-  public record ModifiedAmountEvent(String accountId, String depositId, String unitId, BigDecimal amount, List<ModifyAmount> modifyAmounts) implements Event {}
+  public record ModifiedAmountEvent(DepositUnitId depositUnitId, BigDecimal amount, List<ModifyAmount> modifyAmounts) implements Event {}
 
-  public record DepositUnit(String accountId, String depositId, String unitId, BigDecimal amount, BigDecimal balance, BigDecimal amountWithdrawn) {}
+  public record DepositUnit(DepositUnitId depositUnitId, BigDecimal amount, BigDecimal balance, BigDecimal amountWithdrawn) {}
 
-  public record WithdrawLeaf(String accountId, String withdrawalId, String leafId, BigDecimal amount) {}
+  public record WithdrawLeaf(WithdrawalRedLeafId withdrawalRedLeafId, BigDecimal amount) {}
 
-  public record WithdrawCommand(String withdrawalAccountId, String withdrawalId, String withdrawalLeafId, BigDecimal withDrawalRequestAmount) {}
+  public record WithdrawCommand(WithdrawalRedLeafId withdrawalRedLeafId, BigDecimal withDrawalRequestAmount) {}
 
-  public record WithdrawnEvent(WithdrawLeaf withdrawLeaf, DepositUnit depositUnit) implements Event {}
+  public record WithdrawnEvent(WithdrawalRedLeafId withdrawalRedLeafId, DepositUnit depositUnit) implements Event {}
 
-  public record WithdrawalCancelCommand(String accountId, String withdrawalId, String leafId) {}
+  public record WithdrawalCancelCommand(WithdrawalRedLeafId withdrawalRedLeafId) {}
 
-  public record WithdrawalCancelledEvent(String accountId, String withdrawalId, String leafId, BigDecimal amount, BigDecimal balance) implements Event {}
+  public record WithdrawalCancelledEvent(WithdrawalRedLeafId withdrawalRedLeafId, BigDecimal amount, BigDecimal balance) implements Event {}
 }

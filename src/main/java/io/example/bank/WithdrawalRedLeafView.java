@@ -50,7 +50,10 @@ public class WithdrawalRedLeafView extends View<WithdrawalRedLeafView.LeafRow> {
     }
 
     public LeafRow on(WithdrawalRedLeafEntity.DepositSeekEvent event) {
-      return new LeafRow(event.accountId(), event.withdrawalId(), event.leafId(), event.amountNeeded(), balance);
+      var accountId = event.withdrawalRedLeafId().accountId();
+      var withdrawalId = event.withdrawalRedLeafId().withdrawalId();
+      var leafId = event.withdrawalRedLeafId().leafId();
+      return new LeafRow(accountId, withdrawalId, leafId, event.amountNeeded(), balance);
     }
 
     public LeafRow on(WithdrawalRedLeafEntity.DepositFoundEvent event) {

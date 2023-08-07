@@ -39,7 +39,8 @@ public class DepositEntity extends EventSourcedEntity<DepositEntity.State, Depos
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return Validator.<Effect<String>>start()
-        .isEmpty(command.depositId(), "Cannot deposit without depositId")
+        .isEmpty(command.depositId().accountId, "Cannot deposit without accountId")
+        .isEmpty(command.depositId().depositId, "Cannot deposit without depositId")
         .isPositive(command.amount(), "Deposit amount must be positive")
         .onError(errorMessage -> effects().error(errorMessage, Status.Code.INVALID_ARGUMENT))
         .onSuccess(() -> effects()
@@ -62,14 +63,24 @@ public class DepositEntity extends EventSourcedEntity<DepositEntity.State, Depos
     return currentState().on(event);
   }
 
+  public record DepositId(String accountId, String depositId) {
+    boolean isEmpty() {
+      return accountId == null || accountId.isEmpty() ||
+          depositId == null || depositId.isEmpty();
+    }
+
+    String toEntityId() {
+      return "%s_%s".formatted(accountId, depositId);
+    }
+  }
+
   public record State(
-      String accountId,
-      String depositId,
+      DepositId depositId,
       LocalDateTime lastUpdated,
       BigDecimal amount) {
 
     static State emptyState() {
-      return new State(null, null, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO);
+      return new State(null, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO);
     }
 
     boolean isEmpty() {
@@ -77,17 +88,17 @@ public class DepositEntity extends EventSourcedEntity<DepositEntity.State, Depos
     }
 
     Event eventFor(DepositCommand command) {
-      return new DepositedEvent(command.accountId(), command.depositId(), command.amount());
+      return new DepositedEvent(command.depositId(), command.amount());
     }
 
     State on(DepositedEvent event) {
-      return new State(event.accountId(), event.depositId(), LocalDateTime.now(), event.amount());
+      return new State(event.depositId(), LocalDateTime.now(), event.amount());
     }
   }
 
   public interface Event {}
 
-  public record DepositCommand(String accountId, String depositId, BigDecimal amount) {}
+  public record DepositCommand(DepositId depositId, BigDecimal amount) {}
 
-  public record DepositedEvent(String accountId, String depositId, BigDecimal amount) implements Event {}
+  public record DepositedEvent(DepositId depositId, BigDecimal amount) implements Event {}
 }

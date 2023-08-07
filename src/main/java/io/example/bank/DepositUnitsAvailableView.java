@@ -64,7 +64,7 @@ public class DepositUnitsAvailableView extends View<DepositUnitsAvailableView.De
     }
 
     public DepositUnitRow on(DepositUnitEntity.ModifiedAmountEvent event) {
-      return new DepositUnitRow(event.accountId(), event.depositId(), event.unitId(), event.amount(), event.amount());
+      return new DepositUnitRow(event.depositUnitId().accountId(), event.depositUnitId().depositId(), event.depositUnitId().unitId(), event.amount(), event.amount());
     }
 
     public DepositUnitRow on(DepositUnitEntity.WithdrawalCancelledEvent event) {

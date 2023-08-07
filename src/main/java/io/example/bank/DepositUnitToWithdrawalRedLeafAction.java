@@ -19,13 +19,14 @@ public class DepositUnitToWithdrawalRedLeafAction extends Action {
   public Effect<String> on(DepositUnitEntity.WithdrawnEvent event) {
     log.info("Event: {}", event);
 
-    var depositUnit = new WithdrawalRedLeafEntity.DepositUnit(event.depositUnit().accountId(), event.depositUnit().depositId(),
-        event.depositUnit().unitId(), event.depositUnit().amountWithdrawn());
-    var command = new WithdrawalRedLeafEntity.DepositFoundCommand(event.withdrawLeaf().accountId(), event.withdrawLeaf().withdrawalId(),
-        event.withdrawLeaf().leafId(), depositUnit);
+    var depositUnit = event.depositUnit();
+    var depositUnitId = depositUnit.depositUnitId();
+    var leafDepositUnit = new WithdrawalRedLeafEntity.DepositUnit(depositUnitId, depositUnit.amountWithdrawn());
+    var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId(depositUnitId.accountId(), depositUnitId.depositId(), depositUnitId.unitId());
+    var command = new WithdrawalRedLeafEntity.DepositFoundCommand(withdrawalRedLeafId, leafDepositUnit);
 
     return effects()
-        .forward(componentClient.forEventSourcedEntity(event.withdrawLeaf().leafId())
+        .forward(componentClient.forEventSourcedEntity(withdrawalRedLeafId.toEntityId())
             .call(WithdrawalRedLeafEntity::depositFound)
             .params(command));
   }

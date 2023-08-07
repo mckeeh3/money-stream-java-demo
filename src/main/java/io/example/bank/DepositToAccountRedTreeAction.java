@@ -19,7 +19,7 @@ public class DepositToAccountRedTreeAction extends Action {
   public Effect<String> on(DepositEntity.DepositedEvent event) {
     log.info("Event: {}", event);
 
-    var subBranchId = AccountRedTreeEntity.BranchId.forLeaf(event.accountId(), event.depositId());
+    var subBranchId = AccountRedTreeEntity.BranchId.forLeaf(event.depositId().accountId(), event.depositId().depositId());
     var branchId = subBranchId.levelUp();
     var command = new AccountRedTreeEntity.UpdateSubbranchCommand(branchId, subBranchId, event.amount());
 

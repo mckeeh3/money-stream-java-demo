@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.example.bank.WithdrawalRedLeafEntity.WithdrawalRedLeafId;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
@@ -30,8 +31,8 @@ public class WithdrawalRedTreeAction extends Action {
 
     var resultsBranches = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) > 0)
-        .map(subbranch -> new WithdrawalRedTreeEntity.BranchCreateCommand(event.accountId(), event.withdrawalId(), subbranch.branchId(), event.branchId(), subbranch.amountToWithdraw()))
-        .map(command -> componentClient.forEventSourcedEntity(command.branchId())
+        .map(subbranch -> new WithdrawalRedTreeEntity.BranchCreateCommand(subbranch.withdrawalRedTreeId(), event.withdrawalRedTreeId(), subbranch.amountToWithdraw()))
+        .map(command -> componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
             .call(WithdrawalRedTreeEntity::createBranch)
             .params(command))
         .map(deferredCall -> deferredCall.execute())
@@ -39,8 +40,8 @@ public class WithdrawalRedTreeAction extends Action {
 
     var resultsLeaves = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) <= 0)
-        .map(subbranch -> new WithdrawalRedLeafEntity.LeafCreateCommand(event.accountId(), event.withdrawalId(), subbranch.branchId(), event.branchId(), subbranch.amountToWithdraw()))
-        .map(command -> componentClient.forEventSourcedEntity(command.leafId())
+        .map(subbranch -> new WithdrawalRedLeafEntity.LeafCreateCommand(WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId()), event.withdrawalRedTreeId(), subbranch.amountToWithdraw()))
+        .map(command -> componentClient.forEventSourcedEntity(command.withdrawalRedLeafId().toEntityId())
             .call(WithdrawalRedLeafEntity::createLeaf)
             .params(command))
         .map(deferredCall -> deferredCall.execute())

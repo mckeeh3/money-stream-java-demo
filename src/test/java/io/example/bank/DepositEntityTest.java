@@ -15,20 +15,19 @@ public class DepositEntityTest {
     var testKit = EventSourcedTestKit.of(DepositEntity::new);
 
     {
+      var depositId = new DepositEntity.DepositId("accountId", "depositId");
       var amount = BigDecimal.valueOf(123.45);
-      var command = new DepositEntity.DepositCommand("accountId", "depositId", amount);
+      var command = new DepositEntity.DepositCommand(depositId, amount);
       var result = testKit.call(e -> e.deposit(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositEntity.DepositedEvent.class);
-      assertEquals("accountId", event.accountId());
-      assertEquals("depositId", event.depositId());
+      assertEquals(depositId, event.depositId());
       assertEquals(0, event.amount().compareTo(amount));
 
       var state = testKit.getState();
-      assertEquals("accountId", state.accountId());
-      assertEquals("depositId", state.depositId());
+      assertEquals(depositId, state.depositId());
       assertEquals(0, state.amount().compareTo(amount));
     }
   }
@@ -37,9 +36,10 @@ public class DepositEntityTest {
   public void getDepositTest() {
     var testKit = EventSourcedTestKit.of(DepositEntity::new);
 
+    var depositId = new DepositEntity.DepositId("accountId", "depositId");
     {
       var amount = BigDecimal.valueOf(123.45);
-      var command = new DepositEntity.DepositCommand("accountId", "depositId", amount);
+      var command = new DepositEntity.DepositCommand(depositId, amount);
       var result = testKit.call(e -> e.deposit(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -50,8 +50,7 @@ public class DepositEntityTest {
       assertTrue(result.isReply());
 
       var reply = result.getReply();
-      assertEquals("accountId", reply.accountId());
-      assertEquals("depositId", reply.depositId());
+      assertEquals(depositId, reply.depositId());
       assertEquals(0, reply.amount().compareTo(BigDecimal.valueOf(123.45)));
     }
   }

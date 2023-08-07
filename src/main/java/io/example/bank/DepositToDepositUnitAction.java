@@ -22,7 +22,8 @@ public class DepositToDepositUnitAction extends Action {
     log.info("Event: {}", event);
 
     var unitId = UUID.randomUUID().toString();
-    var command = new DepositUnitEntity.ModifyAmountCommand(event.accountId(), event.depositId(), unitId, event.amount());
+    var depositUnitId = new DepositUnitEntity.DepositUnitId(event.depositId().accountId(), event.depositId().depositId(), unitId);
+    var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, event.amount());
 
     return effects()
         .forward(componentClient.forEventSourcedEntity(unitId)
