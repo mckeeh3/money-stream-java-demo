@@ -74,5 +74,9 @@ public class DepositUnitsAvailableView extends View<DepositUnitsAvailableView.De
     public DepositUnitRow on(DepositUnitEntity.WithdrawnEvent event) {
       return new DepositUnitRow(accountId, depositId, unitId, amount, event.depositUnit().balance());
     }
+
+    String toEntityId() {
+      return "%s_%s_%s".formatted(accountId, depositId, unitId);
+    }
   }
 }

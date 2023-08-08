@@ -28,8 +28,8 @@ public class DepositUnitToDepositUnitAction extends Action {
     }
 
     var results = event.modifyAmounts().stream()
-        .map(modifyAmount -> new DepositUnitEntity.ModifyAmountCommand(event.depositUnitId(), modifyAmount.amount()))
-        .map(command -> componentClient.forEventSourcedEntity(command.depositUnitId().toEntityID())
+        .map(modifyAmount -> new DepositUnitEntity.ModifyAmountCommand(modifyAmount.depositUnitId(), modifyAmount.amount()))
+        .map(command -> componentClient.forEventSourcedEntity(command.depositUnitId().toEntityId())
             .call(DepositUnitEntity::modifyAmount)
             .params(command))
         .map(deferredCall -> deferredCall.execute())

@@ -21,7 +21,7 @@ import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
-@Id("branchId")
+@Id("withdrawalRedTreeId")
 @TypeId("withdrawalRedTree")
 @RequestMapping("/withdrawalRedTree/{withdrawalRedTreeId}")
 public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTreeEntity.State, WithdrawalRedTreeEntity.Event> {

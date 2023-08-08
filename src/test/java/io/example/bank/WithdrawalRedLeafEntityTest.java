@@ -18,8 +18,9 @@ public class WithdrawalRedLeafEntityTest {
 
     var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("accountId", "withdrawalId", "leafId");
     var parentBranchId = new WithdrawalRedTreeEntity.WithdrawalRedTreeId("accountId", "withdrawalId", "parentId");
+    var amount = BigDecimal.valueOf(10.00);
+    var command = new WithdrawalRedLeafEntity.LeafCreateCommand(withdrawalRedLeafId, parentBranchId, amount);
     {
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand(withdrawalRedLeafId, parentBranchId, BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -33,19 +34,18 @@ public class WithdrawalRedLeafEntityTest {
       {
         var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositSeekEvent.class);
         assertEquals(withdrawalRedLeafId, event.withdrawalRedLeafId());
-        assertEquals(BigDecimal.valueOf(10.00), event.amountNeeded());
+        assertEquals(amount, event.amountNeeded());
       }
 
       {
         var state = testKit.getState();
         assertEquals(withdrawalRedLeafId, state.withdrawalRedLeafId());
-        assertEquals(BigDecimal.valueOf(10.00), state.amountToWithdraw());
+        assertEquals(amount, state.amountToWithdraw());
         assertEquals(BigDecimal.ZERO, state.amountWithdrawn());
       }
     }
 
     { // duplicate command test
-      var command = new WithdrawalRedLeafEntity.LeafCreateCommand(withdrawalRedLeafId, parentBranchId, BigDecimal.valueOf(10.00));
       var result = testKit.call(e -> e.createLeaf(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());

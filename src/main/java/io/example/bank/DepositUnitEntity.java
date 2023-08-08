@@ -107,7 +107,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
       return new DepositUnitId(accountId, depositId, UUID.randomUUID().toString());
     }
 
-    String toEntityID() {
+    String toEntityId() {
       return "%s_%s_%s".formatted(accountId, depositId, unitId);
     }
   }

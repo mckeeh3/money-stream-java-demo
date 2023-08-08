@@ -26,7 +26,7 @@ public class DepositToDepositUnitAction extends Action {
     var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, event.amount());
 
     return effects()
-        .forward(componentClient.forEventSourcedEntity(unitId)
+        .forward(componentClient.forEventSourcedEntity(depositUnitId.toEntityId())
             .call(DepositUnitEntity::modifyAmount)
             .params(command));
   }

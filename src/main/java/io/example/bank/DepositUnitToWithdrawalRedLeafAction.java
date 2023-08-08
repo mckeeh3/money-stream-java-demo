@@ -22,11 +22,10 @@ public class DepositUnitToWithdrawalRedLeafAction extends Action {
     var depositUnit = event.depositUnit();
     var depositUnitId = depositUnit.depositUnitId();
     var leafDepositUnit = new WithdrawalRedLeafEntity.DepositUnit(depositUnitId, depositUnit.amountWithdrawn());
-    var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId(depositUnitId.accountId(), depositUnitId.depositId(), depositUnitId.unitId());
-    var command = new WithdrawalRedLeafEntity.DepositFoundCommand(withdrawalRedLeafId, leafDepositUnit);
+    var command = new WithdrawalRedLeafEntity.DepositFoundCommand(event.withdrawalRedLeafId(), leafDepositUnit);
 
     return effects()
-        .forward(componentClient.forEventSourcedEntity(withdrawalRedLeafId.toEntityId())
+        .forward(componentClient.forEventSourcedEntity(event.withdrawalRedLeafId().toEntityId())
             .call(WithdrawalRedLeafEntity::depositFound)
             .params(command));
   }

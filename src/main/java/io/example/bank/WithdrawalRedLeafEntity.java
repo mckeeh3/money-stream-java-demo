@@ -22,9 +22,9 @@ import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
-@Id("leafId")
+@Id("withdrawalRedLeafId")
 @TypeId("withdrawalRedLeaf")
-@RequestMapping("/withdrawalRedLeaf/{withdrawalLeafId}")
+@RequestMapping("/withdrawalRedLeaf/{withdrawalRedLeafId}")
 public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLeafEntity.State, WithdrawalRedLeafEntity.Event> {
   private static final Logger log = LoggerFactory.getLogger(WithdrawalRedLeafEntity.class);
   private final String entityId;

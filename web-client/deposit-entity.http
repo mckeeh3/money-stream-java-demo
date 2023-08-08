@@ -9,7 +9,9 @@ PUT {{urlPrefix}}/deposit/{{depositId}}/deposit
 Content-Type: application/json
 
 {
-    "accountId": "{{accountId}}",
-    "depositId": "{{depositId}}",
+    "depositId": {
+        "accountId": "{{accountId}}",
+        "depositId": "{{depositId}}"
+    },
     "amount": {{amount}}
 }
