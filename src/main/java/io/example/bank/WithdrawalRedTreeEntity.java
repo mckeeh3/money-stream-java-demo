@@ -182,7 +182,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
       var updateEvent = new UpdatedAmountWithdrawnEvent(withdrawalRedTreeId, command.subbranch());
       var newState = on(updateEvent);
       if (isTrunk() && newState.isApproved) {
-        var approvedEvent = new WithdrawalApprovedEvent(command.withdrawalRedTreeId.accountId(), command.withdrawalRedTreeId.withdrawalId());
+        var approvedEvent = new WithdrawalApprovedEvent(command.withdrawalRedTreeId());
         return List.of(updateEvent, approvedEvent);
       }
       return List.of(updateEvent);
@@ -294,7 +294,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
   public record UpdatedAmountWithdrawnEvent(WithdrawalRedTreeId withdrawalRedTreeId, Subbranch subbranch) implements Event {}
 
-  public record WithdrawalApprovedEvent(String accountId, String withdrawalId) implements Event {}
+  public record WithdrawalApprovedEvent(WithdrawalRedTreeId withdrawalRedTreeId) implements Event {}
 
   public record InsufficientFundsCommand(WithdrawalRedTreeId withdrawalRedTreeId) {}
 
