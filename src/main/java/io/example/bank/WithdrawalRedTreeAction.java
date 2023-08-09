@@ -8,7 +8,10 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.example.bank.WithdrawalRedLeafEntity.LeafCreateCommand;
 import io.example.bank.WithdrawalRedLeafEntity.WithdrawalRedLeafId;
+import io.example.bank.WithdrawalRedTreeEntity.BranchCreateCommand;
+import io.example.bank.WithdrawalRedTreeEntity.Subbranch;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
@@ -31,25 +34,41 @@ public class WithdrawalRedTreeAction extends Action {
 
     var resultsBranches = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) > 0)
-        .map(subbranch -> new WithdrawalRedTreeEntity.BranchCreateCommand(subbranch.withdrawalRedTreeId(), event.withdrawalRedTreeId(), subbranch.amountToWithdraw()))
-        .map(command -> componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
-            .call(WithdrawalRedTreeEntity::createBranch)
-            .params(command))
-        .map(deferredCall -> deferredCall.execute())
+        .map(subbranch -> toCommandBranch(event, subbranch))
+        .map(command -> toCallBranch(command))
         .toList();
 
     var resultsLeaves = event.subbranches().stream()
         .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) <= 0)
-        .map(subbranch -> new WithdrawalRedLeafEntity.LeafCreateCommand(WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId()), event.withdrawalRedTreeId(), subbranch.amountToWithdraw()))
-        .map(command -> componentClient.forEventSourcedEntity(command.withdrawalRedLeafId().toEntityId())
-            .call(WithdrawalRedLeafEntity::createLeaf)
-            .params(command))
-        .map(deferredCall -> deferredCall.execute())
+        .map(subbranch -> toCommandLeaf(event, subbranch))
+        .map(command -> toCallLeaf(command))
         .toList();
 
     var results = Stream.concat(resultsBranches.stream(), resultsLeaves.stream()).toList();
 
     return effects().asyncReply(waitForCallsToComplete(results));
+  }
+
+  private BranchCreateCommand toCommandBranch(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
+    return new WithdrawalRedTreeEntity.BranchCreateCommand(subbranch.withdrawalRedTreeId(), event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
+  }
+
+  private CompletionStage<String> toCallBranch(BranchCreateCommand command) {
+    return componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
+        .call(WithdrawalRedTreeEntity::createBranch)
+        .params(command)
+        .execute();
+  }
+
+  private LeafCreateCommand toCommandLeaf(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
+    return new WithdrawalRedLeafEntity.LeafCreateCommand(WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId()), event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
+  }
+
+  private CompletionStage<String> toCallLeaf(LeafCreateCommand command) {
+    return componentClient.forEventSourcedEntity(command.withdrawalRedLeafId().toEntityId())
+        .call(WithdrawalRedLeafEntity::createLeaf)
+        .params(command)
+        .execute();
   }
 
   private CompletionStage<String> waitForCallsToComplete(List<CompletionStage<String>> results) {

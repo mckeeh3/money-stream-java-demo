@@ -167,10 +167,10 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
 
     List<Event> eventsFor(DepositFoundCommand command) {
       var newState = on(new DepositFoundEvent(command.withdrawalRedLeafId(), command.depositUnit(), BigDecimal.ZERO, List.of()));
-      var foundEvent = new DepositFoundEvent(command.withdrawalRedLeafId(), command.depositUnit(), amountToWithdraw, depositUnits);
+      var foundEvent = new DepositFoundEvent(command.withdrawalRedLeafId(), command.depositUnit(), amountToWithdraw, newState.depositUnits);
       if (newState.amountWithdrawn().compareTo(newState.amountToWithdraw()) >= 0) {
-        var FullyFundedEvent = new FullyFundedEvent(command.withdrawalRedLeafId(), parentBranchId, newState.amountWithdrawn());
-        return List.of(foundEvent, FullyFundedEvent);
+        var fullyFundedEvent = new FullyFundedEvent(command.withdrawalRedLeafId(), parentBranchId, newState.amountWithdrawn());
+        return List.of(foundEvent, fullyFundedEvent);
       }
       var seekEvent = new DepositSeekEvent(command.withdrawalRedLeafId(), newState.amountToWithdraw().subtract(newState.amountWithdrawn()));
       return List.of(foundEvent, seekEvent);

@@ -26,7 +26,7 @@ public class WithdrawalToWithdrawalRedTreeAction extends Action {
     var command = new WithdrawalRedTreeEntity.TrunkCreateCommand(withdrawalRedTreeId, event.amount());
 
     return effects()
-        .forward(componentClient.forEventSourcedEntity(branchId)
+        .forward(componentClient.forEventSourcedEntity(withdrawalRedTreeId.toEntityId())
             .call(WithdrawalRedTreeEntity::createTrunk)
             .params(command));
   }
