@@ -43,7 +43,10 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
     }
 
     return Validator.<Effect<String>>start()
-        .isEmpty(command.withdrawalId(), "Cannot withdraw without withdrawalId")
+        .isNull(command.withdrawalId(), "Cannot withdraw without withdrawalId")
+        .isTrue(command.withdrawalId().isEmpty(), "Cannot withdraw without withdrawalId")
+        .isEmpty(command.withdrawalId.accountId(), "Cannot withdraw without accountId")
+        .isEmpty(command.withdrawalId.withdrawalId(), "Cannot withdraw without withdrawalId")
         .isPositive(command.amount(), "Withdraw amount must be positive")
         .onError(errorMessage -> effects().error(errorMessage, Status.Code.INVALID_ARGUMENT))
         .onSuccess(() -> effects()
@@ -96,16 +99,26 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
     return currentState().on(event);
   }
 
+  public record WithdrawalId(String accountId, String withdrawalId) {
+    boolean isEmpty() {
+      return accountId == null || accountId.isEmpty()
+          || withdrawalId == null || withdrawalId.isEmpty();
+    }
+
+    String toEntityId() {
+      return String.format("%s_%s", accountId, withdrawalId);
+    }
+  }
+
   public record State(
-      String accountId,
-      String withdrawalId,
+      WithdrawalId withdrawalId,
       boolean approved,
       boolean rejected,
       LocalDateTime lastUpdated,
       BigDecimal amount) {
 
     static State emptyState() {
-      return new State(null, null, false, false, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO);
+      return new State(null, false, false, LocalDateTime.of(0, 1, 1, 0, 0), BigDecimal.ZERO);
     }
 
     boolean isEmpty() {
@@ -113,41 +126,41 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
     }
 
     Event eventFor(WithdrawCommand command) {
-      return new WithdrawnEvent(command.accountId(), command.withdrawalId(), command.amount());
+      return new WithdrawnEvent(command.withdrawalId(), command.amount());
     }
 
     Event eventFor(WithdrawalApprovedCommand command) {
-      return new WithdrawalApprovedEvent(command.accountId(), command.withdrawalId());
+      return new WithdrawalApprovedEvent(command.withdrawalId());
     }
 
     Event eventFor(WithdrawalRejectedCommand command) {
-      return new WithdrawalRejectedEvent(command.accountId(), command.withdrawalId());
+      return new WithdrawalRejectedEvent(command.withdrawalId());
     }
 
     State on(WithdrawnEvent event) {
-      return new State(event.accountId(), event.withdrawalId(), approved, rejected, LocalDateTime.now(), event.amount());
+      return new State(event.withdrawalId(), approved, rejected, LocalDateTime.now(), event.amount());
     }
 
     State on(WithdrawalApprovedEvent event) {
-      return new State(accountId, withdrawalId, true, false, LocalDateTime.now(), amount);
+      return new State(withdrawalId, true, false, LocalDateTime.now(), amount);
     }
 
     State on(WithdrawalRejectedEvent event) {
-      return new State(accountId, withdrawalId, false, true, LocalDateTime.now(), amount);
+      return new State(withdrawalId, false, true, LocalDateTime.now(), amount);
     }
   }
 
   public interface Event {}
 
-  public record WithdrawCommand(String accountId, String withdrawalId, BigDecimal amount) {}
+  public record WithdrawCommand(WithdrawalId withdrawalId, BigDecimal amount) {}
 
-  public record WithdrawnEvent(String accountId, String withdrawalId, BigDecimal amount) implements Event {}
+  public record WithdrawnEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
 
-  public record WithdrawalApprovedCommand(String accountId, String withdrawalId) {}
+  public record WithdrawalApprovedCommand(WithdrawalId withdrawalId) {}
 
-  public record WithdrawalApprovedEvent(String accountId, String withdrawalId) implements Event {}
+  public record WithdrawalApprovedEvent(WithdrawalId withdrawalId) implements Event {}
 
-  public record WithdrawalRejectedCommand(String accountId, String withdrawalId) {}
+  public record WithdrawalRejectedCommand(WithdrawalId withdrawalId) {}
 
-  public record WithdrawalRejectedEvent(String accountId, String withdrawalId) implements Event {}
+  public record WithdrawalRejectedEvent(WithdrawalId withdrawalId) implements Event {}
 }

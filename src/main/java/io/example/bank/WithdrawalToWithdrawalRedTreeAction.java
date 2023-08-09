@@ -22,7 +22,7 @@ public class WithdrawalToWithdrawalRedTreeAction extends Action {
     log.info("Event: {}", event);
 
     var branchId = UUID.randomUUID().toString();
-    var withdrawalRedTreeId = new WithdrawalRedTreeEntity.WithdrawalRedTreeId(event.accountId(), event.withdrawalId(), branchId);
+    var withdrawalRedTreeId = new WithdrawalRedTreeEntity.WithdrawalRedTreeId(event.withdrawalId().accountId(), event.withdrawalId().withdrawalId(), branchId);
     var command = new WithdrawalRedTreeEntity.TrunkCreateCommand(withdrawalRedTreeId, event.amount());
 
     return effects()
