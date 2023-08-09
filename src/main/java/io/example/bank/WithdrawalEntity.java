@@ -130,7 +130,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
     }
 
     Event eventFor(WithdrawalApprovedCommand command) {
-      return new WithdrawalApprovedEvent(command.withdrawalId());
+      return new WithdrawalApprovedEvent(command.withdrawalId(), amount);
     }
 
     Event eventFor(WithdrawalRejectedCommand command) {
@@ -158,7 +158,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
 
   public record WithdrawalApprovedCommand(WithdrawalId withdrawalId) {}
 
-  public record WithdrawalApprovedEvent(WithdrawalId withdrawalId) implements Event {}
+  public record WithdrawalApprovedEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
 
   public record WithdrawalRejectedCommand(WithdrawalId withdrawalId) {}
 

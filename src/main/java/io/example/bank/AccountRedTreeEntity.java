@@ -144,8 +144,8 @@ public class AccountRedTreeEntity extends EventSourcedEntity<AccountRedTreeEntit
       return new BranchId(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
     }
 
-    static BranchId forLeaf(String accountId, String leafId) {
-      var leafNo = Math.abs(leafId.hashCode()) % treeLeavesMax;
+    public static BranchId forLeaf(String accountId, String leafEntityId) {
+      var leafNo = Math.abs(leafEntityId.hashCode()) % treeLeavesMax;
       return new BranchId(accountId, treeLevels, leafNo);
     }
 
