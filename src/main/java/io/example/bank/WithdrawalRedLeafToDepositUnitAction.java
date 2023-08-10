@@ -56,9 +56,9 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
   }
 
   private CompletionStage<String> callFor(DepositSeekEvent event) {
-    var command = new WithdrawalRedLeafEntity.CancelWithdrawalCommand(event.withdrawalRedLeafId());
+    var command = new WithdrawalRedLeafEntity.NoDepositsAvailableCommand(event.withdrawalRedLeafId());
     return componentClient.forEventSourcedEntity(event.withdrawalRedLeafId().toEntityId())
-        .call(WithdrawalRedLeafEntity::cancelWithdrawal)
+        .call(WithdrawalRedLeafEntity::noDepositsAvailable)
         .params(command)
         .execute();
   }

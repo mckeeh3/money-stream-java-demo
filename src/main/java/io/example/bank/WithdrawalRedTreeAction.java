@@ -49,6 +49,12 @@ public class WithdrawalRedTreeAction extends Action {
     return effects().asyncReply(waitForCallsToComplete(results));
   }
 
+  public Effect<String> on(WithdrawalRedLeafEntity.InsufficientFundsEvent event) {
+    log.info("Event: {}", event);
+
+    return effects().reply("OK");
+  }
+
   private BranchCreateCommand toCommandBranch(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
     return new WithdrawalRedTreeEntity.BranchCreateCommand(subbranch.withdrawalRedTreeId(), event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
   }

@@ -21,6 +21,7 @@ public class DepositUnitEntityTest {
       var depositUnitId = new DepositUnitEntity.DepositUnitId("deposit-account-1", "deposit-1", "unit-1");
       var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, BigDecimal.valueOf(543.21));
       var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositUnitEntity.ModifiedAmountEvent.class);
@@ -49,6 +50,7 @@ public class DepositUnitEntityTest {
       var depositUnitId = new DepositUnitEntity.DepositUnitId("accountId", "depositId", "unitId");
       var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, BigDecimal.valueOf(12.34));
       var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositUnitEntity.ModifiedAmountEvent.class);
@@ -79,6 +81,7 @@ public class DepositUnitEntityTest {
     {
       var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, amount);
       var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
@@ -86,6 +89,7 @@ public class DepositUnitEntityTest {
       var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-1", "withdrawal-1", "leaf-1");
       var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId, withdrawalAmount1);
       var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositUnitEntity.WithdrawnEvent.class);
@@ -106,6 +110,7 @@ public class DepositUnitEntityTest {
       var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-2", "withdrawal-2", "leaf-2");
       var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId, withdrawalAmount2);
       var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositUnitEntity.WithdrawnEvent.class);
@@ -123,6 +128,7 @@ public class DepositUnitEntityTest {
       var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-3", "withdrawal-3", "leaf-3");
       var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId, withdrawalAmount3);
       var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(DepositUnitEntity.WithdrawnEvent.class);
@@ -134,6 +140,67 @@ public class DepositUnitEntityTest {
 
       var state = testKit.getState();
       assertEquals(0, state.balance().compareTo(BigDecimal.ZERO));
+    }
+  }
+
+  @Test
+  public void cancelWithdrawalTest() {
+    var testKit = EventSourcedTestKit.of(DepositUnitEntity::new);
+
+    var amount = BigDecimal.valueOf(12.34);
+    var withdrawalAmount1 = BigDecimal.valueOf(2.34);
+    var withdrawalAmount2 = BigDecimal.valueOf(5.00);
+    var withdrawalAmount3 = BigDecimal.valueOf(5.00);
+
+    var depositUnitId = new DepositUnitEntity.DepositUnitId("deposit-account-1", "deposit-1", "unit-1");
+    var withdrawalRedLeafId1 = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-1", "withdrawal-1", "leaf-1");
+    var withdrawalRedLeafId2 = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-2", "withdrawal-2", "leaf-2");
+    var withdrawalRedLeafId3 = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("withdrawal-account-3", "withdrawal-3", "leaf-3");
+
+    {
+      var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, amount);
+      var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+    }
+
+    {
+      var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId1, withdrawalAmount1);
+      var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+    }
+
+    {
+      var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId2, withdrawalAmount2);
+      var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+    }
+
+    { // after the third withdrawal the deposit balance must be zero
+      var command = new DepositUnitEntity.WithdrawCommand(withdrawalRedLeafId3, withdrawalAmount3);
+      var result = testKit.call(e -> e.withdraw(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+
+      var state = testKit.getState();
+      assertEquals(0, state.balance().compareTo(BigDecimal.ZERO));
+      assertEquals(3, state.withdrawals().size());
+    }
+
+    { // cancel the second withdrawal and the deposit balance must be the amount of the second withdrawal
+      var command = new DepositUnitEntity.WithdrawalCancelCommand(withdrawalRedLeafId2);
+      var result = testKit.call(e -> e.cancelWithdrawal(command));
+      assertTrue(result.isReply());
+      assertEquals("OK", result.getReply());
+
+      var event = result.getNextEventOfType(DepositUnitEntity.WithdrawalCancelledEvent.class);
+      assertEquals(withdrawalRedLeafId2, event.withdrawalRedLeafId());
+
+      var state = testKit.getState();
+      assertEquals(0, state.balance().compareTo(withdrawalAmount2));
+      assertEquals(2, state.withdrawals().size());
     }
   }
 }

@@ -1,8 +1,8 @@
 @urlPrefix = http://localhost:9000
 @accountId = account-1
-@withdrawalId = withdrawal-1
-@entityId = account-1_withdrawal-1
-@amount = 123.45
+@withdrawalId = withdrawal-3
+@entityId = {{accountId}}_{{withdrawalId}}
+@amount = 26.55
 
 ### Create a withdrawal
 

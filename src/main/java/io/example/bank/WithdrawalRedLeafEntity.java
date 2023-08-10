@@ -61,7 +61,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
   }
 
   @PutMapping("/depositNotFound")
-  public Effect<String> depositNotFound(@RequestBody DepositNotFoundCommand command) {
+  public Effect<String> noDepositsAvailable(@RequestBody NoDepositsAvailableCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return effects()
@@ -113,7 +113,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
   }
 
   @EventHandler
-  public State on(DepositNotFoundEvent event) {
+  public State on(InsufficientFundsEvent event) {
     log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
     return currentState().on(event);
   }
@@ -176,8 +176,8 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
       return List.of(foundEvent, seekEvent);
     }
 
-    Event eventFor(DepositNotFoundCommand command) {
-      return new DepositNotFoundEvent(command.withdrawalRedLeafId());
+    Event eventFor(NoDepositsAvailableCommand command) {
+      return new InsufficientFundsEvent(command.withdrawalRedLeafId(), parentBranchId);
     }
 
     Event eventFor(CancelWithdrawalCommand command) {
@@ -223,7 +223,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
       return this;
     }
 
-    State on(DepositNotFoundEvent event) {
+    State on(InsufficientFundsEvent event) {
       return this;
     }
 
@@ -254,9 +254,9 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
 
   public record FullyFundedEvent(WithdrawalRedLeafId withdrawalRedLeafId, WithdrawalRedTreeId parentBranchId, BigDecimal amount) implements Event {}
 
-  public record DepositNotFoundCommand(WithdrawalRedLeafId withdrawalRedLeafId) {}
+  public record NoDepositsAvailableCommand(WithdrawalRedLeafId withdrawalRedLeafId) {}
 
-  public record DepositNotFoundEvent(WithdrawalRedLeafId withdrawalRedLeafId) implements Event {}
+  public record InsufficientFundsEvent(WithdrawalRedLeafId withdrawalRedLeafId, WithdrawalRedTreeId parentBranchId) implements Event {}
 
   public record CancelWithdrawalCommand(WithdrawalRedLeafId withdrawalRedLeafId) {}
 

@@ -128,13 +128,14 @@ public class WithdrawalRedLeafEntityTest {
     }
 
     {
-      var command = new WithdrawalRedLeafEntity.DepositNotFoundCommand(withdrawalRedLeafId);
-      var result = testKit.call(e -> e.depositNotFound(command));
+      var command = new WithdrawalRedLeafEntity.NoDepositsAvailableCommand(withdrawalRedLeafId);
+      var result = testKit.call(e -> e.noDepositsAvailable(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.DepositNotFoundEvent.class);
+      var event = result.getNextEventOfType(WithdrawalRedLeafEntity.InsufficientFundsEvent.class);
       assertEquals(withdrawalRedLeafId, event.withdrawalRedLeafId());
+      assertEquals(parentBranchId, event.parentBranchId());
 
       var state = testKit.getState();
       assertEquals(withdrawalRedLeafId, state.withdrawalRedLeafId());
