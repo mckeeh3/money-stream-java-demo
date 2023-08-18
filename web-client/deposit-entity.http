@@ -1,17 +1,32 @@
 @urlPrefix = http://localhost:9000
 @accountId = account-1
-@depositId = deposit-1
-@amount = 123.45
+@depositId1 = deposit-1
+@amount1 = 123.45
+@depositId2 = deposit-2
+@amount2 = 123.45
 
-### Create a deposit
+### Create a deposit 1
 
-PUT {{urlPrefix}}/deposit/{{depositId}}/deposit
+PUT {{urlPrefix}}/deposit/{{depositId1}}/deposit
 Content-Type: application/json
 
 {
     "depositId": {
         "accountId": "{{accountId}}",
-        "depositId": "{{depositId}}"
+        "depositId": "{{depositId1}}"
     },
-    "amount": {{amount}}
+    "amount": {{amount1}}
+}
+
+### Create a deposit 2
+
+PUT {{urlPrefix}}/deposit/{{depositId2}}/deposit
+Content-Type: application/json
+
+{
+    "depositId": {
+        "accountId": "{{accountId}}",
+        "depositId": "{{depositId2}}"
+    },
+    "amount": {{amount2}}
 }

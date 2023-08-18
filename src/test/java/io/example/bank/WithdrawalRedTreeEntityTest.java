@@ -96,7 +96,7 @@ public class WithdrawalRedTreeEntityTest {
 
       var state = testKit.getState();
       assertEquals(0, state.amountWithdrawn().compareTo(BigDecimal.valueOf(123.45)));
-      assertTrue(state.isApproved());
+      assertTrue(state.approved());
     }
   }
 
@@ -131,7 +131,7 @@ public class WithdrawalRedTreeEntityTest {
 
       var state = testKit.getState();
       assertEquals(0, state.amountWithdrawn().compareTo(BigDecimal.valueOf(100.00)));
-      assertFalse(state.isApproved());
+      assertFalse(state.approved());
     }
 
     {
@@ -152,7 +152,7 @@ public class WithdrawalRedTreeEntityTest {
 
       var state = testKit.getState();
       assertEquals(0, state.amountWithdrawn().compareTo(BigDecimal.valueOf(123.45)));
-      assertTrue(state.isApproved());
+      assertTrue(state.approved());
     }
   }
 
@@ -180,7 +180,7 @@ public class WithdrawalRedTreeEntityTest {
       assertEquals(parentBranchId, event.withdrawalRedTreeParentId());
 
       var state = testKit.getState();
-      assertTrue(state.isCanceled());
+      assertTrue(state.canceled());
     }
   }
 
@@ -204,11 +204,11 @@ public class WithdrawalRedTreeEntityTest {
       assertEquals("OK", result.getReply());
 
       var event = result.getNextEventOfType(WithdrawalRedTreeEntity.CanceledWithdrawalEvent.class);
-      assertEquals(trunkId, event.withdrawalRedTreeIId());
-      assertTrue(event.subbranchIds().size() > 0);
+      assertEquals(trunkId, event.withdrawalRedTreeId());
+      assertTrue(event.subbranches().size() > 0);
 
       var state = testKit.getState();
-      assertTrue(state.isCanceled());
+      assertTrue(state.canceled());
     }
   }
 

@@ -22,9 +22,9 @@ import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
-@Id("unitId")
+@Id("depositUnitId")
 @TypeId("depositUnit")
-@RequestMapping("/depositUnit/{unitId}")
+@RequestMapping("/depositUnit/{depositUnitId}")
 public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.State, DepositUnitEntity.Event> {
   private static final Logger log = LoggerFactory.getLogger(DepositUnitEntity.class);
   private static final BigDecimal maxUnitAmount = BigDecimal.valueOf(25.00);
@@ -158,7 +158,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
     Event eventFor(WithdrawalCancelCommand command) {
       var filtered = withdrawals.stream().filter(w -> !w.withdrawalRedLeafId().equals(command.withdrawalRedLeafId())).toList();
       var newBalance = amount.subtract(sum(filtered));
-      return new WithdrawalCancelledEvent(command.withdrawalRedLeafId(), amount, newBalance);
+      return new WithdrawalCancelledEvent(depositUnitId, command.withdrawalRedLeafId(), amount, newBalance);
     }
 
     State on(ModifiedAmountEvent event) {
@@ -218,7 +218,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
 
   public record WithdrawnEvent(WithdrawalRedLeafId withdrawalRedLeafId, DepositUnit depositUnit) implements Event {}
 
-  public record WithdrawalCancelCommand(WithdrawalRedLeafId withdrawalRedLeafId) {}
+  public record WithdrawalCancelCommand(DepositUnitId depositUnitId, WithdrawalRedLeafId withdrawalRedLeafId) {}
 
-  public record WithdrawalCancelledEvent(WithdrawalRedLeafId withdrawalRedLeafId, BigDecimal amount, BigDecimal balance) implements Event {}
+  public record WithdrawalCancelledEvent(DepositUnitId depositUnitId, WithdrawalRedLeafId withdrawalRedLeafId, BigDecimal amount, BigDecimal balance) implements Event {}
 }

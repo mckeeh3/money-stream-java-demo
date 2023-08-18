@@ -68,7 +68,7 @@ public class DepositUnitsAvailableView extends View<DepositUnitsAvailableView.De
     }
 
     public DepositUnitRow on(DepositUnitEntity.WithdrawalCancelledEvent event) {
-      return new DepositUnitRow(accountId, depositId, unitId, amount, BigDecimal.ZERO);
+      return new DepositUnitRow(accountId, depositId, unitId, amount, event.balance());
     }
 
     public DepositUnitRow on(DepositUnitEntity.WithdrawnEvent event) {

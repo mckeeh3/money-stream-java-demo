@@ -190,7 +190,7 @@ public class DepositUnitEntityTest {
     }
 
     { // cancel the second withdrawal and the deposit balance must be the amount of the second withdrawal
-      var command = new DepositUnitEntity.WithdrawalCancelCommand(withdrawalRedLeafId2);
+      var command = new DepositUnitEntity.WithdrawalCancelCommand(depositUnitId, withdrawalRedLeafId2);
       var result = testKit.call(e -> e.cancelWithdrawal(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());

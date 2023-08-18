@@ -1,12 +1,17 @@
 package io.example.bank;
 
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.example.bank.DepositUnitEntity.WithdrawalCancelCommand;
+import io.example.bank.WithdrawalRedLeafEntity.CanceledWithdrawalEvent;
 import io.example.bank.WithdrawalRedLeafEntity.DepositSeekEvent;
+import io.example.bank.WithdrawalRedLeafEntity.DepositUnit;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
@@ -24,6 +29,17 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
   public Effect<String> on(WithdrawalRedLeafEntity.DepositSeekEvent event) {
     log.info("Event: {}", event);
     return effects().asyncReply(queryView(event));
+  }
+
+  public Effect<String> on(WithdrawalRedLeafEntity.CanceledWithdrawalEvent event) {
+    log.info("Event: {}", event);
+
+    var results = event.depositUnits().stream()
+        .map(depositUnit -> toCommand(event, depositUnit))
+        .map(command -> callFor(command))
+        .toList();
+
+    return effects().asyncReply(waitForCallsToComplete(results));
   }
 
   private CompletionStage<String> queryView(DepositSeekEvent event) {
@@ -61,5 +77,21 @@ public class WithdrawalRedLeafToDepositUnitAction extends Action {
         .call(WithdrawalRedLeafEntity::noDepositsAvailable)
         .params(command)
         .execute();
+  }
+
+  private WithdrawalCancelCommand toCommand(CanceledWithdrawalEvent event, DepositUnit depositUnit) {
+    return new DepositUnitEntity.WithdrawalCancelCommand(depositUnit.depositUnitId(), event.withdrawalRedLeafId());
+  }
+
+  private CompletionStage<String> callFor(WithdrawalCancelCommand command) {
+    return componentClient.forEventSourcedEntity(command.depositUnitId().toEntityId())
+        .call(DepositUnitEntity::cancelWithdrawal)
+        .params(command)
+        .execute();
+  }
+
+  private CompletableFuture<String> waitForCallsToComplete(List<CompletionStage<String>> results) {
+    return CompletableFuture.allOf(results.toArray(CompletableFuture[]::new))
+        .thenApply(__ -> "OK");
   }
 }

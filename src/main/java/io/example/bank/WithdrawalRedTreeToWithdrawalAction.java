@@ -26,4 +26,15 @@ public class WithdrawalRedTreeToWithdrawalAction extends Action {
         .call(WithdrawalEntity::approve)
         .params(command));
   }
+
+  public Effect<String> on(WithdrawalRedTreeEntity.CanceledWithdrawalEvent event) {
+    log.info("Event: {}", event);
+
+    var withdrawalId = new WithdrawalEntity.WithdrawalId(event.withdrawalRedTreeId().accountId(), event.withdrawalRedTreeId().withdrawalId());
+    var command = new WithdrawalEntity.WithdrawalRejectedCommand(withdrawalId);
+
+    return effects().forward(componentClient.forEventSourcedEntity(withdrawalId.toEntityId())
+        .call(WithdrawalEntity::reject)
+        .params(command));
+  }
 }

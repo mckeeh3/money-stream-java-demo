@@ -70,6 +70,10 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
   public Effect<String> insufficientFunds(@RequestBody InsufficientFundsCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
+    if (currentState().canceled) {
+      return effects().reply("OK");
+    }
+
     return effects()
         .emitEvent(currentState().eventFor(command))
         .thenReply(__ -> "OK");
@@ -151,8 +155,8 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
       LocalDateTime lastUpdated,
       BigDecimal amountToWithdraw,
       BigDecimal amountWithdrawn,
-      boolean isApproved,
-      boolean isCanceled,
+      boolean approved,
+      boolean canceled,
       List<Subbranch> subbranches) {
 
     static State emptyState() {
@@ -181,7 +185,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
     List<Event> eventsFor(UpdateAmountWithdrawnCommand command) {
       var updateEvent = new UpdatedAmountWithdrawnEvent(withdrawalRedTreeId, command.subbranch());
       var newState = on(updateEvent);
-      if (isTrunk() && newState.isApproved) {
+      if (isTrunk() && newState.approved) {
         var approvedEvent = new WithdrawalApprovedEvent(command.withdrawalRedTreeId());
         return List.of(updateEvent, approvedEvent);
       }
@@ -190,13 +194,13 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
     Event eventFor(InsufficientFundsCommand command) {
       if (withdrawalRedTreeParentId == null || withdrawalRedTreeParentId.isEmpty()) {
-        return new CanceledWithdrawalEvent(withdrawalRedTreeId, subbranches.stream().map(Subbranch::withdrawalRedTreeId).toList());
+        return new CanceledWithdrawalEvent(withdrawalRedTreeId, subbranches);
       }
       return new InsufficientFundsEvent(withdrawalRedTreeId, withdrawalRedTreeParentId);
     }
 
     Event eventFor(CancelWithdrawalCommand command) {
-      return new CanceledWithdrawalEvent(withdrawalRedTreeParentId, subbranches.stream().map(Subbranch::withdrawalRedTreeId).toList());
+      return new CanceledWithdrawalEvent(withdrawalRedTreeParentId, subbranches);
     }
 
     State on(BranchCreatedEvent event) {
@@ -206,8 +210,8 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           LocalDateTime.now(),
           event.amount(),
           amountWithdrawn,
-          isApproved,
-          isCanceled,
+          approved,
+          canceled,
           event.subbranches());
     }
 
@@ -227,7 +231,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           amountToWithdraw,
           newAmountWithdrawn,
           newAmountWithdrawn.compareTo(amountToWithdraw) == 0,
-          isCanceled,
+          canceled,
           newSubbranches);
     }
 
@@ -242,7 +246,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           LocalDateTime.now(),
           amountToWithdraw,
           amountWithdrawn,
-          isApproved,
+          approved,
           true,
           subbranches);
     }
@@ -254,7 +258,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           LocalDateTime.now(),
           amountToWithdraw,
           amountWithdrawn,
-          isApproved,
+          false,
           true,
           subbranches);
     }
@@ -302,5 +306,5 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
   public record CancelWithdrawalCommand(WithdrawalRedTreeId withdrawalRedTreeId) {}
 
-  public record CanceledWithdrawalEvent(WithdrawalRedTreeId withdrawalRedTreeIId, List<WithdrawalRedTreeId> subbranchIds) implements Event {}
+  public record CanceledWithdrawalEvent(WithdrawalRedTreeId withdrawalRedTreeId, List<Subbranch> subbranches) implements Event {}
 }

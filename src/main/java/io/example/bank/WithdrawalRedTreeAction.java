@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.example.bank.WithdrawalRedLeafEntity.LeafCreateCommand;
 import io.example.bank.WithdrawalRedLeafEntity.WithdrawalRedLeafId;
 import io.example.bank.WithdrawalRedTreeEntity.BranchCreateCommand;
+import io.example.bank.WithdrawalRedTreeEntity.CancelWithdrawalCommand;
 import io.example.bank.WithdrawalRedTreeEntity.Subbranch;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
@@ -33,13 +34,13 @@ public class WithdrawalRedTreeAction extends Action {
     }
 
     var resultsBranches = event.subbranches().stream()
-        .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) > 0)
+        .filter(subbranch -> isBranchAmount(subbranch))
         .map(subbranch -> toCommandBranch(event, subbranch))
         .map(command -> toCallBranch(command))
         .toList();
 
     var resultsLeaves = event.subbranches().stream()
-        .filter(subbranch -> subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) <= 0)
+        .filter(subbranch -> isLeafAmount(subbranch))
         .map(subbranch -> toCommandLeaf(event, subbranch))
         .map(command -> toCallLeaf(command))
         .toList();
@@ -49,13 +50,49 @@ public class WithdrawalRedTreeAction extends Action {
     return effects().asyncReply(waitForCallsToComplete(results));
   }
 
-  public Effect<String> on(WithdrawalRedLeafEntity.InsufficientFundsEvent event) {
+  public Effect<String> on(WithdrawalRedTreeEntity.InsufficientFundsEvent event) {
     log.info("Event: {}", event);
+    var command = new WithdrawalRedTreeEntity.InsufficientFundsCommand(event.withdrawalRedTreeParentId());
 
-    return effects().reply("OK");
+    return effects()
+        .forward(componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
+            .call(WithdrawalRedTreeEntity::insufficientFunds)
+            .params(command));
   }
 
-  private BranchCreateCommand toCommandBranch(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
+  public Effect<String> on(WithdrawalRedTreeEntity.CanceledWithdrawalEvent event) {
+    log.info("Event: {}", event);
+
+    if (event.subbranches().isEmpty()) {
+      return effects().reply("OK");
+    }
+
+    var resultsBranches = event.subbranches().stream()
+        .filter(subbranch -> isBranchAmount(subbranch))
+        .map(subbranch -> toCommandBranch(subbranch))
+        .map(command -> toCallBranch(command))
+        .toList();
+
+    var resultsLeaves = event.subbranches().stream()
+        .filter(subbranch -> isLeafAmount(subbranch))
+        .map(subbranch -> toCommandLeaf(subbranch))
+        .map(command -> toCallLeaf(command))
+        .toList();
+
+    var results = Stream.concat(resultsBranches.stream(), resultsLeaves.stream()).toList();
+
+    return effects().asyncReply(waitForCallsToComplete(results));
+  }
+
+  private static boolean isBranchAmount(Subbranch subbranch) {
+    return subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) > 0;
+  }
+
+  private static boolean isLeafAmount(Subbranch subbranch) {
+    return subbranch.amountToWithdraw().compareTo(WithdrawalRedTreeEntity.maxLeafAmount) <= 0;
+  }
+
+  private static BranchCreateCommand toCommandBranch(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
     return new WithdrawalRedTreeEntity.BranchCreateCommand(subbranch.withdrawalRedTreeId(), event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
   }
 
@@ -66,8 +103,9 @@ public class WithdrawalRedTreeAction extends Action {
         .execute();
   }
 
-  private LeafCreateCommand toCommandLeaf(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
-    return new WithdrawalRedLeafEntity.LeafCreateCommand(WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId()), event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
+  private static LeafCreateCommand toCommandLeaf(WithdrawalRedTreeEntity.BranchCreatedEvent event, Subbranch subbranch) {
+    var withdrawalRedLeafId = WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId());
+    return new WithdrawalRedLeafEntity.LeafCreateCommand(withdrawalRedLeafId, event.withdrawalRedTreeId(), subbranch.amountToWithdraw());
   }
 
   private CompletionStage<String> toCallLeaf(LeafCreateCommand command) {
@@ -77,7 +115,30 @@ public class WithdrawalRedTreeAction extends Action {
         .execute();
   }
 
-  private CompletionStage<String> waitForCallsToComplete(List<CompletionStage<String>> results) {
+  private static CancelWithdrawalCommand toCommandBranch(WithdrawalRedTreeEntity.Subbranch subbranch) {
+    return new WithdrawalRedTreeEntity.CancelWithdrawalCommand(subbranch.withdrawalRedTreeId());
+  }
+
+  private CompletionStage<String> toCallBranch(CancelWithdrawalCommand command) {
+    return componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
+        .call(WithdrawalRedTreeEntity::cancelWithdrawal)
+        .params(command)
+        .execute();
+  }
+
+  private static WithdrawalRedLeafEntity.CancelWithdrawalCommand toCommandLeaf(WithdrawalRedTreeEntity.Subbranch subbranch) {
+    var withdrawalRedLeafId = WithdrawalRedLeafId.from(subbranch.withdrawalRedTreeId());
+    return new WithdrawalRedLeafEntity.CancelWithdrawalCommand(withdrawalRedLeafId);
+  }
+
+  private CompletionStage<String> toCallLeaf(WithdrawalRedLeafEntity.CancelWithdrawalCommand command) {
+    return componentClient.forEventSourcedEntity(command.withdrawalRedLeafId().toEntityId())
+        .call(WithdrawalRedLeafEntity::cancelWithdrawal)
+        .params(command)
+        .execute();
+  }
+
+  private static CompletionStage<String> waitForCallsToComplete(List<CompletionStage<String>> results) {
     return CompletableFuture.allOf(results.toArray(CompletableFuture[]::new))
         .thenApply(__ -> "OK");
   }

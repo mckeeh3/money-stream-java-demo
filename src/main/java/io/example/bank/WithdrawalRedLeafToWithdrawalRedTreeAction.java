@@ -28,4 +28,14 @@ public class WithdrawalRedLeafToWithdrawalRedTreeAction extends Action {
             .call(WithdrawalRedTreeEntity::updateAmountWithdrawn)
             .params(command));
   }
+
+  public Effect<String> on(WithdrawalRedLeafEntity.InsufficientFundsEvent event) {
+    log.info("Event: {}", event);
+    var command = new WithdrawalRedTreeEntity.InsufficientFundsCommand(event.parentBranchId());
+
+    return effects()
+        .forward(componentClient.forEventSourcedEntity(command.withdrawalRedTreeId().toEntityId())
+            .call(WithdrawalRedTreeEntity::insufficientFunds)
+            .params(command));
+  }
 }

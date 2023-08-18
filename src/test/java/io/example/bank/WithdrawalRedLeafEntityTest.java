@@ -115,7 +115,7 @@ public class WithdrawalRedLeafEntityTest {
   }
 
   @Test
-  public void leafNotFoundTest() {
+  public void insufficientFundsTest() {
     var testKit = EventSourcedTestKit.of(WithdrawalRedLeafEntity::new);
 
     var withdrawalRedLeafId = new WithdrawalRedLeafEntity.WithdrawalRedLeafId("accountId", "withdrawalId", "leafId");
