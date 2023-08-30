@@ -6,15 +6,15 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import io.example.Validator;
 import io.grpc.Status;
+import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
@@ -34,8 +34,8 @@ public class DepositEntity extends EventSourcedEntity<DepositEntity.State, Depos
     return State.emptyState();
   }
 
-  @PutMapping("/deposit")
-  public Effect<String> deposit(@RequestBody DepositCommand command) {
+  @PostMapping("/create")
+  public Effect<String> create(@RequestBody DepositCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return Validator.<Effect<String>>start()

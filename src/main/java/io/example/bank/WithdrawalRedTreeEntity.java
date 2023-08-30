@@ -9,7 +9,8 @@ import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -38,7 +39,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
     return State.emptyState();
   }
 
-  @PutMapping("/createTrunk")
+  @PostMapping("/createTrunk")
   public Effect<String> createTrunk(@RequestBody TrunkCreateCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -47,7 +48,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/createBranch")
+  @PostMapping("/createBranch")
   public Effect<String> createBranch(@RequestBody BranchCreateCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -56,7 +57,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/updateAmountWithdrawn")
+  @PatchMapping("/updateAmountWithdrawn")
   public Effect<String> updateAmountWithdrawn(@RequestBody UpdateAmountWithdrawnCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -66,11 +67,11 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
   }
 
   // Insufficient funds messaging works from the top of the tree down to the truck.
-  @PutMapping("/insufficientFunds")
+  @PatchMapping("/insufficientFunds")
   public Effect<String> insufficientFunds(@RequestBody InsufficientFundsCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
-    if (currentState().canceled) {
+    if (currentState().insufficientFunds) {
       return effects().reply("OK");
     }
 
@@ -81,9 +82,13 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
 
   // When an insufficient funds message reaches the trunk, the trunk emits a canceled withdrawal event
   // that cascades up to the top of the tree to the leaves.
-  @PutMapping("/cancelWithdrawal")
+  @PatchMapping("/cancelWithdrawal")
   public Effect<String> cancelWithdrawal(@RequestBody CancelWithdrawalCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
+
+    if (currentState().insufficientFunds) {
+      return effects().reply("OK");
+    }
 
     return effects()
         .emitEvent(currentState().eventFor(command))
@@ -156,7 +161,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
       BigDecimal amountToWithdraw,
       BigDecimal amountWithdrawn,
       boolean approved,
-      boolean canceled,
+      boolean insufficientFunds,
       List<Subbranch> subbranches) {
 
     static State emptyState() {
@@ -211,7 +216,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           event.amount(),
           amountWithdrawn,
           approved,
-          canceled,
+          insufficientFunds,
           event.subbranches());
     }
 
@@ -231,7 +236,7 @@ public class WithdrawalRedTreeEntity extends EventSourcedEntity<WithdrawalRedTre
           amountToWithdraw,
           newAmountWithdrawn,
           newAmountWithdrawn.compareTo(amountToWithdraw) == 0,
-          canceled,
+          insufficientFunds,
           newSubbranches);
     }
 

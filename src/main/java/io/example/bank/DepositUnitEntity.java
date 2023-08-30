@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,7 +53,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
         .thenReply(__ -> "OK");
   }
 
-  @PostMapping("/withdraw")
+  @PatchMapping("/withdraw")
   public Effect<String> withdraw(@RequestBody WithdrawCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -61,7 +62,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
         .thenReply(__ -> "OK");
   }
 
-  @PostMapping("/cancelWithdrawal")
+  @PatchMapping("/cancelWithdrawal")
   public Effect<String> cancelWithdrawal(@RequestBody WithdrawalCancelCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -128,7 +129,7 @@ public class DepositUnitEntity extends EventSourcedEntity<DepositUnitEntity.Stat
     }
 
     boolean isDuplicateCommand(ModifyAmountCommand command) {
-      return amount != null && command.amount().compareTo(amount) >= 0;
+      return amount != null && amount.compareTo(command.amount()) <= 0;
     }
 
     boolean isAvailableForWithdrawal() {

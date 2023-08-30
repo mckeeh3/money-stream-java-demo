@@ -7,7 +7,7 @@
 
 ### Create a deposit 1
 
-PUT {{urlPrefix}}/deposit/{{depositId1}}/deposit
+POST {{urlPrefix}}/deposit/{{depositId1}}/create
 Content-Type: application/json
 
 {
@@ -20,7 +20,7 @@ Content-Type: application/json
 
 ### Create a deposit 2
 
-PUT {{urlPrefix}}/deposit/{{depositId2}}/deposit
+POST {{urlPrefix}}/deposit/{{depositId2}}/create
 Content-Type: application/json
 
 {

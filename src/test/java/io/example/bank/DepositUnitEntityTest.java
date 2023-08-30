@@ -41,6 +41,26 @@ public class DepositUnitEntityTest {
   }
 
   @Test
+  public void duplicateModifyAmountCommandTest() {
+    var testKit = EventSourcedTestKit.of(DepositUnitEntity::new);
+
+    var depositUnitId = new DepositUnitEntity.DepositUnitId("deposit-account-1", "deposit-1", "unit-1");
+    var command = new DepositUnitEntity.ModifyAmountCommand(depositUnitId, BigDecimal.valueOf(543.21));
+
+    {
+      var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
+      assertEquals(1, result.getAllEvents().size());
+    }
+
+    {
+      var result = testKit.call(e -> e.modifyAmount(command));
+      assertTrue(result.isReply());
+      assertEquals(0, result.getAllEvents().size());
+    }
+  }
+
+  @Test
   public void setAmountLow() {
     var testKit = EventSourcedTestKit.of(DepositUnitEntity::new);
 

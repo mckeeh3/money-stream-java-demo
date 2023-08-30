@@ -18,7 +18,7 @@ public class DepositEntityTest {
       var depositId = new DepositEntity.DepositId("accountId", "depositId");
       var amount = BigDecimal.valueOf(123.45);
       var command = new DepositEntity.DepositCommand(depositId, amount);
-      var result = testKit.call(e -> e.deposit(command));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
@@ -40,7 +40,7 @@ public class DepositEntityTest {
     {
       var amount = BigDecimal.valueOf(123.45);
       var command = new DepositEntity.DepositCommand(depositId, amount);
-      var result = testKit.call(e -> e.deposit(command));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }

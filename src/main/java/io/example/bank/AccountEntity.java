@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -34,7 +35,7 @@ public class AccountEntity extends EventSourcedEntity<AccountEntity.State, Accou
     return State.emptyState();
   }
 
-  @PutMapping("/create")
+  @PostMapping("/create")
   public Effect<String> create(@RequestBody CreateAccountCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -52,7 +53,7 @@ public class AccountEntity extends EventSourcedEntity<AccountEntity.State, Accou
             .thenReply(__ -> "OK"));
   }
 
-  @PutMapping("/updateBalance")
+  @PatchMapping("/updateBalance")
   public Effect<String> updateBalance(@RequestBody UpdateAccountBalanceCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
     return effects()

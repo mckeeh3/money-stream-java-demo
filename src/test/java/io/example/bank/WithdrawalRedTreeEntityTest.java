@@ -180,7 +180,7 @@ public class WithdrawalRedTreeEntityTest {
       assertEquals(parentBranchId, event.withdrawalRedTreeParentId());
 
       var state = testKit.getState();
-      assertTrue(state.canceled());
+      assertTrue(state.insufficientFunds());
     }
   }
 
@@ -208,7 +208,7 @@ public class WithdrawalRedTreeEntityTest {
       assertTrue(event.subbranches().size() > 0);
 
       var state = testKit.getState();
-      assertTrue(state.canceled());
+      assertTrue(state.insufficientFunds());
     }
   }
 

@@ -6,15 +6,16 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import io.example.Validator;
 import io.grpc.Status;
+import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
@@ -34,8 +35,8 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
     return State.emptyState();
   }
 
-  @PutMapping("/withdraw")
-  public Effect<String> withdraw(@RequestBody WithdrawCommand command) {
+  @PostMapping("/create")
+  public Effect<String> create(@RequestBody WithdrawlCreateCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     if (!currentState().isEmpty()) {
@@ -54,8 +55,8 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
             .thenReply(__ -> "OK"));
   }
 
-  @PutMapping("/approve")
-  public Effect<String> approve(@RequestBody WithdrawalApprovedCommand command) {
+  @PatchMapping("/approve")
+  public Effect<String> approve(@RequestBody WithdrawalApproveCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return effects()
@@ -63,8 +64,8 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/reject")
-  public Effect<String> reject(@RequestBody WithdrawalRejectedCommand command) {
+  @PatchMapping("/reject")
+  public Effect<String> insufficientFunds(@RequestBody WithdrawalInsufficientFundsCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     return effects()
@@ -82,7 +83,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
   }
 
   @EventHandler
-  public State on(WithdrawnEvent event) {
+  public State on(WithdrawalCreatedEvent event) {
     log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
     return currentState().on(event);
   }
@@ -94,7 +95,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
   }
 
   @EventHandler
-  public State on(WithdrawalRejectedEvent event) {
+  public State on(WithdrawalInsufficientFundsEvent event) {
     log.info("EntityId: {}\n_State: {}\n_Event: {}", entityId, currentState(), event);
     return currentState().on(event);
   }
@@ -113,7 +114,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
   public record State(
       WithdrawalId withdrawalId,
       boolean approved,
-      boolean rejected,
+      boolean insufficientFunds,
       LocalDateTime lastUpdated,
       BigDecimal amount) {
 
@@ -125,42 +126,42 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
       return withdrawalId == null || withdrawalId.isEmpty();
     }
 
-    Event eventFor(WithdrawCommand command) {
-      return new WithdrawnEvent(command.withdrawalId(), command.amount());
+    Event eventFor(WithdrawlCreateCommand command) {
+      return new WithdrawalCreatedEvent(command.withdrawalId(), command.amount());
     }
 
-    Event eventFor(WithdrawalApprovedCommand command) {
+    Event eventFor(WithdrawalApproveCommand command) {
       return new WithdrawalApprovedEvent(command.withdrawalId(), amount);
     }
 
-    Event eventFor(WithdrawalRejectedCommand command) {
-      return new WithdrawalRejectedEvent(command.withdrawalId());
+    Event eventFor(WithdrawalInsufficientFundsCommand command) {
+      return new WithdrawalInsufficientFundsEvent(command.withdrawalId());
     }
 
-    State on(WithdrawnEvent event) {
-      return new State(event.withdrawalId(), approved, rejected, LocalDateTime.now(), event.amount());
+    State on(WithdrawalCreatedEvent event) {
+      return new State(event.withdrawalId(), approved, insufficientFunds, LocalDateTime.now(), event.amount());
     }
 
     State on(WithdrawalApprovedEvent event) {
       return new State(withdrawalId, true, false, LocalDateTime.now(), amount);
     }
 
-    State on(WithdrawalRejectedEvent event) {
+    State on(WithdrawalInsufficientFundsEvent event) {
       return new State(withdrawalId, false, true, LocalDateTime.now(), amount);
     }
   }
 
   public interface Event {}
 
-  public record WithdrawCommand(WithdrawalId withdrawalId, BigDecimal amount) {}
+  public record WithdrawlCreateCommand(WithdrawalId withdrawalId, BigDecimal amount) {}
 
-  public record WithdrawnEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
+  public record WithdrawalCreatedEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
 
-  public record WithdrawalApprovedCommand(WithdrawalId withdrawalId) {}
+  public record WithdrawalApproveCommand(WithdrawalId withdrawalId) {}
 
   public record WithdrawalApprovedEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
 
-  public record WithdrawalRejectedCommand(WithdrawalId withdrawalId) {}
+  public record WithdrawalInsufficientFundsCommand(WithdrawalId withdrawalId) {}
 
-  public record WithdrawalRejectedEvent(WithdrawalId withdrawalId) implements Event {}
+  public record WithdrawalInsufficientFundsEvent(WithdrawalId withdrawalId) implements Event {}
 }

@@ -8,7 +8,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -38,8 +39,8 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
     return State.emptyState();
   }
 
-  @PutMapping("/createLeaf")
-  public Effect<String> createLeaf(@RequestBody LeafCreateCommand command) {
+  @PostMapping("/create")
+  public Effect<String> create(@RequestBody LeafCreateCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     if (!currentState().isEmpty()) {
@@ -51,7 +52,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/depositFound")
+  @PatchMapping("/depositFound")
   public Effect<String> depositFound(@RequestBody DepositFoundCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -60,7 +61,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/depositNotFound")
+  @PatchMapping("/depositNotFound")
   public Effect<String> noDepositsAvailable(@RequestBody NoDepositsAvailableCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
@@ -69,7 +70,7 @@ public class WithdrawalRedLeafEntity extends EventSourcedEntity<WithdrawalRedLea
         .thenReply(__ -> "OK");
   }
 
-  @PutMapping("/cancelWithdrawal")
+  @PatchMapping("/cancelWithdrawal")
   public Effect<String> cancelWithdrawal(@RequestBody CancelWithdrawalCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 

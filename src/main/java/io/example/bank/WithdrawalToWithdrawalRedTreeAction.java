@@ -18,7 +18,7 @@ public class WithdrawalToWithdrawalRedTreeAction extends Action {
     this.componentClient = componentClient;
   }
 
-  public Effect<String> on(WithdrawalEntity.WithdrawnEvent event) {
+  public Effect<String> on(WithdrawalEntity.WithdrawalCreatedEvent event) {
     log.info("Event: {}", event);
 
     var branchId = UUID.randomUUID().toString();

@@ -20,7 +20,7 @@ public class WithdrawalRedTreeToWithdrawalAction extends Action {
     log.info("Event: {}", event);
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId(event.withdrawalRedTreeId().accountId(), event.withdrawalRedTreeId().withdrawalId());
-    var command = new WithdrawalEntity.WithdrawalApprovedCommand(withdrawalId);
+    var command = new WithdrawalEntity.WithdrawalApproveCommand(withdrawalId);
 
     return effects().forward(componentClient.forEventSourcedEntity(withdrawalId.toEntityId())
         .call(WithdrawalEntity::approve)
@@ -31,10 +31,10 @@ public class WithdrawalRedTreeToWithdrawalAction extends Action {
     log.info("Event: {}", event);
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId(event.withdrawalRedTreeId().accountId(), event.withdrawalRedTreeId().withdrawalId());
-    var command = new WithdrawalEntity.WithdrawalRejectedCommand(withdrawalId);
+    var command = new WithdrawalEntity.WithdrawalInsufficientFundsCommand(withdrawalId);
 
     return effects().forward(componentClient.forEventSourcedEntity(withdrawalId.toEntityId())
-        .call(WithdrawalEntity::reject)
+        .call(WithdrawalEntity::insufficientFunds)
         .params(command));
   }
 }

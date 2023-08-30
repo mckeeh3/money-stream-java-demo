@@ -7,13 +7,14 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
@@ -33,7 +34,7 @@ public class AccountRedTreeEntity extends EventSourcedEntity<AccountRedTreeEntit
     return State.emptyState();
   }
 
-  @PostMapping("/updateSubbranch")
+  @PutMapping("/updateSubbranch")
   public Effect<String> updateSubbranch(@RequestBody UpdateSubbranchCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
     return effects()
@@ -41,7 +42,7 @@ public class AccountRedTreeEntity extends EventSourcedEntity<AccountRedTreeEntit
         .thenReply(__ -> "OK");
   }
 
-  @PostMapping("/releaseBranch")
+  @PatchMapping("/releaseBranch")
   public Effect<String> releaseBranch(@RequestBody ReleaseBranchCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
     return effects()

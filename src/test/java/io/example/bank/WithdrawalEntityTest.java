@@ -17,12 +17,12 @@ public class WithdrawalEntityTest {
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId("accountId", "withdrawalId");
     {
-      var command = new WithdrawalEntity.WithdrawCommand(withdrawalId, BigDecimal.valueOf(123.45));
-      var result = testKit.call(e -> e.withdraw(command));
+      var command = new WithdrawalEntity.WithdrawlCreateCommand(withdrawalId, BigDecimal.valueOf(123.45));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalEntity.WithdrawnEvent.class);
+      var event = result.getNextEventOfType(WithdrawalEntity.WithdrawalCreatedEvent.class);
       assertEquals(withdrawalId.accountId(), event.withdrawalId().accountId());
       assertEquals(withdrawalId.withdrawalId(), event.withdrawalId().withdrawalId());
       assertEquals(0, event.amount().compareTo(BigDecimal.valueOf(123.45)));
@@ -40,14 +40,14 @@ public class WithdrawalEntityTest {
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId("accountId", "withdrawalId");
     {
-      var command = new WithdrawalEntity.WithdrawCommand(withdrawalId, BigDecimal.valueOf(123.45));
-      var result = testKit.call(e -> e.withdraw(command));
+      var command = new WithdrawalEntity.WithdrawlCreateCommand(withdrawalId, BigDecimal.valueOf(123.45));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
     {
-      var command = new WithdrawalEntity.WithdrawalApprovedCommand(withdrawalId);
+      var command = new WithdrawalEntity.WithdrawalApproveCommand(withdrawalId);
       var result = testKit.call(e -> e.approve(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
@@ -61,7 +61,7 @@ public class WithdrawalEntityTest {
       assertEquals(withdrawalId.withdrawalId(), state.withdrawalId().withdrawalId());
       assertEquals(0, state.amount().compareTo(BigDecimal.valueOf(123.45)));
       assertTrue(state.approved());
-      assertFalse(state.rejected());
+      assertFalse(state.insufficientFunds());
     }
   }
 
@@ -71,19 +71,19 @@ public class WithdrawalEntityTest {
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId("accountId", "withdrawalId");
     {
-      var command = new WithdrawalEntity.WithdrawCommand(withdrawalId, BigDecimal.valueOf(123.45));
-      var result = testKit.call(e -> e.withdraw(command));
+      var command = new WithdrawalEntity.WithdrawlCreateCommand(withdrawalId, BigDecimal.valueOf(123.45));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
 
     {
-      var command = new WithdrawalEntity.WithdrawalRejectedCommand(withdrawalId);
-      var result = testKit.call(e -> e.reject(command));
+      var command = new WithdrawalEntity.WithdrawalInsufficientFundsCommand(withdrawalId);
+      var result = testKit.call(e -> e.insufficientFunds(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
 
-      var event = result.getNextEventOfType(WithdrawalEntity.WithdrawalRejectedEvent.class);
+      var event = result.getNextEventOfType(WithdrawalEntity.WithdrawalInsufficientFundsEvent.class);
       assertEquals(withdrawalId.accountId(), event.withdrawalId().accountId());
       assertEquals(withdrawalId.withdrawalId(), event.withdrawalId().withdrawalId());
 
@@ -92,7 +92,7 @@ public class WithdrawalEntityTest {
       assertEquals(withdrawalId.withdrawalId(), state.withdrawalId().withdrawalId());
       assertEquals(0, state.amount().compareTo(BigDecimal.valueOf(123.45)));
       assertFalse(state.approved());
-      assertTrue(state.rejected());
+      assertTrue(state.insufficientFunds());
     }
   }
 
@@ -102,8 +102,8 @@ public class WithdrawalEntityTest {
 
     var withdrawalId = new WithdrawalEntity.WithdrawalId("accountId", "withdrawalId");
     {
-      var command = new WithdrawalEntity.WithdrawCommand(withdrawalId, BigDecimal.valueOf(123.45));
-      var result = testKit.call(e -> e.withdraw(command));
+      var command = new WithdrawalEntity.WithdrawlCreateCommand(withdrawalId, BigDecimal.valueOf(123.45));
+      var result = testKit.call(e -> e.create(command));
       assertTrue(result.isReply());
       assertEquals("OK", result.getReply());
     }
@@ -116,7 +116,7 @@ public class WithdrawalEntityTest {
       assertEquals(withdrawalId.accountId(), reply.withdrawalId().accountId());
       assertEquals(withdrawalId.withdrawalId(), reply.withdrawalId().withdrawalId());
       assertFalse(reply.approved());
-      assertFalse(reply.rejected());
+      assertFalse(reply.insufficientFunds());
       assertEquals(0, reply.amount().compareTo(BigDecimal.valueOf(123.45)));
     }
   }

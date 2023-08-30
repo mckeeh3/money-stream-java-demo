@@ -6,7 +6,7 @@
 
 ### Create a withdrawal
 
-PUT {{urlPrefix}}/withdrawal/{{entityId}}/withdraw
+POST {{urlPrefix}}/withdrawal/{{entityId}}/create
 Content-Type: application/json
 
 {

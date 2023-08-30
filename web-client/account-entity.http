@@ -6,7 +6,7 @@
 
 ### create a new account 1
 
-PUT {{urlPrefix}}/account/{{accountId-1}}/create
+POST {{urlPrefix}}/account/{{accountId-1}}/create
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 
 ### create a new account 2
 
-PUT {{urlPrefix}}/account/{{accountId-2}}/create
+POST {{urlPrefix}}/account/{{accountId-2}}/create
 Content-Type: application/json
 
 {
@@ -28,7 +28,7 @@ Content-Type: application/json
 
 ### update balance for account 1
 
-PUT {{urlPrefix}}/account/{{accountId-1}}/updateBalance
+PATCH {{urlPrefix}}/account/{{accountId-1}}/updateBalance
 Content-Type: application/json
 
 {

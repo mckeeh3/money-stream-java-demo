@@ -110,7 +110,7 @@ public class WithdrawalRedTreeAction extends Action {
 
   private CompletionStage<String> toCallLeaf(LeafCreateCommand command) {
     return componentClient.forEventSourcedEntity(command.withdrawalRedLeafId().toEntityId())
-        .call(WithdrawalRedLeafEntity::createLeaf)
+        .call(WithdrawalRedLeafEntity::create)
         .params(command)
         .execute();
   }
