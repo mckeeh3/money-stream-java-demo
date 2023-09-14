@@ -1,12 +1,12 @@
 @urlPrefix = http://localhost:9000
 @accountId = account-1
-@withdrawalId = withdrawal-1
+@withdrawalId = withdrawal-6
 @entityId = {{accountId}}_{{withdrawalId}}
-@amount = 20.00
+@amount = 11.00
 
 ### Create a withdrawal
 
-POST {{urlPrefix}}/withdrawal/{{entityId}}/create
+PUT {{urlPrefix}}/withdrawal/{{entityId}}/withdraw
 Content-Type: application/json
 
 {

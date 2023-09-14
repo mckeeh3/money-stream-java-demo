@@ -36,7 +36,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
   }
 
   @PostMapping("/create")
-  public Effect<String> create(@RequestBody WithdrawlCreateCommand command) {
+  public Effect<String> create(@RequestBody WithdrawalCreateCommand command) {
     log.info("EntityId: {}\n_State: {}\n_Command: {}", entityId, currentState(), command);
 
     if (!currentState().isEmpty()) {
@@ -126,7 +126,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
       return withdrawalId == null || withdrawalId.isEmpty();
     }
 
-    Event eventFor(WithdrawlCreateCommand command) {
+    Event eventFor(WithdrawalCreateCommand command) {
       return new WithdrawalCreatedEvent(command.withdrawalId(), command.amount());
     }
 
@@ -153,7 +153,7 @@ public class WithdrawalEntity extends EventSourcedEntity<WithdrawalEntity.State,
 
   public interface Event {}
 
-  public record WithdrawlCreateCommand(WithdrawalId withdrawalId, BigDecimal amount) {}
+  public record WithdrawalCreateCommand(WithdrawalId withdrawalId, BigDecimal amount) {}
 
   public record WithdrawalCreatedEvent(WithdrawalId withdrawalId, BigDecimal amount) implements Event {}
 
